@@ -3,6 +3,7 @@ dotenv.config();
 
 export const envConfig = {
   PORT: process.env.PORT,
+  ALLOWED_ORIGINS : process.env.ALLOWED_ORIGINS,
   MONGO_URI: process.env.MONGO_URI,
   SALT_ROUND: process.env.SALT_ROUND,
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,

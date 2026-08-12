@@ -1,7 +1,7 @@
-import { HTTP_STATUS } from "../constants/httpStatus.constants.js";
-import { Admin } from "../models/auth.model.js";
-import ApiError from "../utils/ApiError.js";
-import { envConfig } from "../config/env.config.js";
+import { HTTP_STATUS } from "../../../constants/httpStatus.constants.js";
+import { Admin } from "../models/user.model.js";
+import ApiError from "../../../utils/ApiError.js";
+import { envConfig } from "../../../configs/env.config.js";
 import { generateAndSendOtp, sendAdminCredentials } from "./mail.service.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -99,7 +99,7 @@ export const verifyLoginOtpService = async ({
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Invalid request");
 
   const user = await Admin.findById(decoded._id).select(
-    "+loginOtp +trustedDevices",
+    "+loginOtp +otpExpiry +trustedDevices",
   );
   if (!user) throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not authorized");
 

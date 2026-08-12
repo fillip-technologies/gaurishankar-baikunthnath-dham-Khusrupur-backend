@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { envConfig } from "../config/env.config.js";
+import { envConfig } from "../../../configs/env.config.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
@@ -27,29 +27,6 @@ const adminSchema = new mongoose.Schema(
       unique: true,
       match: [/^\S+@\S+\.\S+$/, "Please provide a valid email address"],
     },
-    address: {
-      locality: {
-        houseName: {
-          type: String,
-          trim: true,
-        },
-        district: {
-          type: String,
-          trim: true,
-        },
-      },
-      state: {
-        type: String,
-        trim: true,
-      },
-      zipcode: {
-        type: String,
-        match: [/^\d{6}$/, "Zipcode must be exactly 6 digits"],
-      },
-      country: {
-        type: String,
-      },
-    },
     role: {
       type: String,
       enum: ["admin", "superadmin"],
@@ -60,7 +37,6 @@ const adminSchema = new mongoose.Schema(
       required: true,
       trim: true,
       select: false,
-      unique: true,
       minlength: [6, "Password must be atleast 6 characters long"],
     },
     sessionId: {
@@ -80,6 +56,11 @@ const adminSchema = new mongoose.Schema(
       default: [],
       select: false,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+      select: false,
+    },
     refreshToken: {
       type: String,
       select: false,
@@ -92,6 +73,7 @@ const adminSchema = new mongoose.Schema(
     },
     otpExpiry: {
       type: Date,
+      select: false,
     },
   },
   { timestamps: true },
@@ -110,9 +92,15 @@ adminSchema.pre("save", async function () {
 adminSchema.methods.comparePassword = function (password) {
   return bcrypt.compare(password, this.password);
 };
+
 adminSchema.methods.generateAccessToken = function () {
   return jwt.sign(
-    { _id: this._id, email: this.email, role: this.role , sessionId: this.sessionId},
+    {
+      _id: this._id,
+      email: this.email,
+      role: this.role,
+      sessionId: this.sessionId,
+    },
     envConfig.ACCESS_TOKEN_SECRET,
     {
       expiresIn: envConfig.ACCESS_TOKEN_EXPIRES_IN,

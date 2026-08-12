@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { envConfig } from "./env.config.js";
+
 export const transporter = nodemailer.createTransport({
   host: envConfig.MAIL_HOST,
   port: Number(envConfig.MAIL_PORT),

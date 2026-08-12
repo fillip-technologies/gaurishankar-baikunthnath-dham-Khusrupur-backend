@@ -2,10 +2,10 @@ import {
   httpOptions,
   deviceCookieOptions,
   challengeCookieOptions,
-} from "../constants/httpOptions.constants.js";
-import { HTTP_STATUS } from "../constants/httpStatus.constants.js";
-import ApiError from "../utils/ApiError.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+} from "../../../constants/httpOptions.constants.js";
+import { HTTP_STATUS } from "../../../constants/httpStatus.constants.js";
+import ApiError from "../../../utils/ApiError.js";
+import { asyncHandler } from "../../../utils/asyncHandler.js";
 import {
   createAdminService,
   loginService,
@@ -13,11 +13,11 @@ import {
   removeAdminService,
   verifyLoginOtpService,
 } from "../services/auth.service.js";
-
-import ApiResponse from "../utils/ApiResponse.js";
+import ApiResponse from "../../../utils/ApiResponse.js";
 import { updatePasswordService } from "../services/auth.service.js";
-import { Admin } from "../models/auth.model.js";
-import { envConfig } from "../config/env.config.js";
+import { Admin } from "../models/user.model.js";
+import { envConfig } from "../../../configs/env.config.js";
+
 
 const getDeviceInfo = (req) => ({
   deviceId: req.cookies?.deviceId,
