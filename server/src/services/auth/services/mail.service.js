@@ -26,6 +26,7 @@ export const generateAndSendOtp = async (admin) => {
 
   admin.loginOtp = hashedOtp;
   admin.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+  admin.loginOtpAttempts = 0;
 
   await admin.save({ validateBeforeSave: false });
 

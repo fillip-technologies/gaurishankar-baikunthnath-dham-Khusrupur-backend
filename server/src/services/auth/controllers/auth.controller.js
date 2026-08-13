@@ -18,7 +18,6 @@ import { updatePasswordService } from "../services/auth.service.js";
 import { Admin } from "../models/user.model.js";
 import { envConfig } from "../../../configs/env.config.js";
 
-
 const getDeviceInfo = (req) => ({
   deviceId: req.cookies?.deviceId,
   userAgent: req.headers["user-agent"],
@@ -38,10 +37,7 @@ const sanitizeUser = (user) => {
 
 // ################     Login     #############
 export const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-
-  if ([email, password].some((field) => !field || field.trim() === ""))
-    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "All fields are required");
+  const { email, password } = req.validated.body;
 
   const { deviceId, userAgent, ip } = getDeviceInfo(req);
 
@@ -86,10 +82,7 @@ export const login = asyncHandler(async (req, res) => {
 
 // ##########   Verify new-device login OTP   ##########
 export const verifyLoginOtp = asyncHandler(async (req, res) => {
-  const { otp } = req.body;
-
-  if (!otp || String(otp).trim() === "")
-    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "OTP is required");
+  const { otp } = req.validated.body;
 
   const challengeToken = req.cookies?.loginChallenge;
   const { deviceId, userAgent, ip } = getDeviceInfo(req);
@@ -124,14 +117,7 @@ export const verifyLoginOtp = asyncHandler(async (req, res) => {
 export const updatePassword = asyncHandler(async (req, res) => {
   const decoded = req.user;
 
-  const { current_password, newpassword } = req.body;
-
-  if (
-    [current_password, newpassword].some(
-      (field) => !field || field.trim() === "",
-    )
-  )
-    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Please enter all the fields");
+  const { current_password, newpassword } = req.validated.body;
 
   const user = await updatePasswordService({
     current_password,
@@ -143,7 +129,9 @@ export const updatePassword = asyncHandler(async (req, res) => {
   delete userData.password;
   res
     .status(HTTP_STATUS.OK)
-    .json(new ApiResponse(HTTP_STATUS.OK, "Password succesfully changed"));
+    .json(
+      new ApiResponse(HTTP_STATUS.OK, null, "Password succesfully changed"),
+    );
 });
 
 // ##############       Create Admin         #############
@@ -152,14 +140,8 @@ export const createAdmin = asyncHandler(async (req, res) => {
 
   if (role !== "superadmin")
     throw new ApiError(HTTP_STATUS.FORBIDDEN, "Request forbidden");
-  const { fullname, mobile_number, email, password } = req.body;
 
-  if (
-    [fullname, mobile_number, email, password].some(
-      (field) => field.trim() === "",
-    )
-  )
-    throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "All fields are required");
+  const { fullname, mobile_number, email, password } = req.validated.body;
 
   const user = await createAdminService({
     fullname,
@@ -171,10 +153,11 @@ export const createAdmin = asyncHandler(async (req, res) => {
   if (!user) throw new ApiError(HTTP_STATUS.CONFLICT, "Problem creating user");
 
   return res
-    .status(HTTP_STATUS.OK)
+    .status(HTTP_STATUS.CREATED)
     .json(
       new ApiResponse(
-        HTTP_STATUS.OK,
+        HTTP_STATUS.CREATED,
+        null,
         "Admin created successfully. Login credentials have been emailed.",
       ),
     );
@@ -188,7 +171,7 @@ export const removeAdmin = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.FORBIDDEN, "Request forbidden");
   }
 
-  const { adminEmail, superAdminPassword } = req.body;
+  const { adminEmail, superAdminPassword } = req.validated.body;
 
   await removeAdminService({
     adminEmail,
@@ -226,4 +209,14 @@ export const renewRefreshToken = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, httpOptions)
     .cookie("refreshToken", refreshToken, httpOptions)
     .json({ message: "token updated" });
+});
+
+export const getAdmin = asyncHandler(async (req, res) => {
+  const user = req.userDoc;
+
+  if (!user) throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not authorized");
+  const admin = sanitizeUser(user);
+  res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, admin, "Admin fetched succesfullly"));
 });

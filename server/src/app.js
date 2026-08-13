@@ -6,6 +6,8 @@ import helmet from "helmet";
 import { envConfig } from "./configs/env.config.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { authRouter } from "./services/auth/routes/auth.routes.js";
+import ApiError from "./utils/ApiError.js";
+import { HTTP_STATUS } from "./constants/httpStatus.constants.js";
 
 const app = express();
 
@@ -28,10 +30,15 @@ app.use(
   }),
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 
 app.use("/api/v1/auth", authRouter);
+
+// Unmatched routes → 404 (handled by errorHandler below).
+app.use((req, res, next) => {
+  next(new ApiError(HTTP_STATUS.NOT_FOUND, "Route not found"));
+});
 
 // MUST be last
 app.use(errorHandler);

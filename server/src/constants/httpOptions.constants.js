@@ -12,7 +12,7 @@ export const deviceCookieOptions = {
 
 export const challengeCookieOptions = {
   ...httpOptions,
-  maxAge: 1000 * 60 * 30, // 5 minutes
+  maxAge: 1000 * 60 * 5, // 5 minutes
 };
 
 

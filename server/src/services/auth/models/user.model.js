@@ -56,11 +56,6 @@ const adminSchema = new mongoose.Schema(
       default: [],
       select: false,
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
-      select: false,
-    },
     refreshToken: {
       type: String,
       select: false,
@@ -73,6 +68,11 @@ const adminSchema = new mongoose.Schema(
     },
     otpExpiry: {
       type: Date,
+      select: false,
+    },
+    loginOtpAttempts: {
+      type: Number,
+      default: 0,
       select: false,
     },
   },

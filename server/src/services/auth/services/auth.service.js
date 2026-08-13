@@ -10,6 +10,8 @@ import jwt from "jsonwebtoken";
 const hashValue = (value) =>
   crypto.createHash("sha256").update(String(value)).digest("hex");
 
+const MAX_OTP_ATTEMPTS = Number(process.env.MAX_OTP_ATTEMPTS) || 5;
+
 const issueSession = async (user, { deviceHash, userAgent, ip }) => {
   user.sessionId = crypto.randomUUID();
   const accessToken = user.generateAccessToken();
@@ -36,7 +38,13 @@ const issueSession = async (user, { deviceHash, userAgent, ip }) => {
   return { user, accessToken, refreshToken };
 };
 
-export const loginService = async ({ email, password, deviceId, userAgent, ip }) => {
+export const loginService = async ({
+  email,
+  password,
+  deviceId,
+  userAgent,
+  ip,
+}) => {
   const user = await Admin.findOne({ email }).select(
     "+password +trustedDevices",
   );
@@ -55,11 +63,10 @@ export const loginService = async ({ email, password, deviceId, userAgent, ip })
   if (!isTrustedDevice) {
     await generateAndSendOtp(user);
 
-    
     const challengeToken = jwt.sign(
       { _id: user._id, purpose: "login_otp" },
-      envConfig.ACCESS_TOKEN_SECRET,
-      { expiresIn: "10m" },
+      envConfig.CHALLENGE_TOKEN_SECRET,
+      { expiresIn: envConfig.CHALLENGE_TOKEN_EXPIRES_IN },
     );
 
     return { requiresOtp: true, email: user.email, challengeToken };
@@ -87,7 +94,7 @@ export const verifyLoginOtpService = async ({
 
   let decoded;
   try {
-    decoded = jwt.verify(challengeToken, envConfig.ACCESS_TOKEN_SECRET);
+    decoded = jwt.verify(challengeToken, envConfig.CHALLENGE_TOKEN_SECRET);
   } catch (error) {
     throw new ApiError(
       HTTP_STATUS.UNAUTHORIZED,
@@ -99,7 +106,7 @@ export const verifyLoginOtpService = async ({
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Invalid request");
 
   const user = await Admin.findById(decoded._id).select(
-    "+loginOtp +otpExpiry +trustedDevices",
+    "+loginOtp +otpExpiry +loginOtpAttempts +trustedDevices",
   );
   if (!user) throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not authorized");
 
@@ -112,6 +119,7 @@ export const verifyLoginOtpService = async ({
   if (user.otpExpiry.getTime() < Date.now()) {
     user.loginOtp = undefined;
     user.otpExpiry = undefined;
+    user.loginOtpAttempts = 0;
     await user.save({ validateBeforeSave: false });
     throw new ApiError(
       HTTP_STATUS.BAD_REQUEST,
@@ -119,12 +127,30 @@ export const verifyLoginOtpService = async ({
     );
   }
 
-  if (hashValue(otp) !== user.loginOtp)
+  if (hashValue(otp) !== user.loginOtp) {
+    // Count the failure; after too many wrong guesses, invalidate the OTP so a
+    // 6-digit code can't be brute-forced within its validity window.
+    user.loginOtpAttempts = (user.loginOtpAttempts || 0) + 1;
+
+    if (user.loginOtpAttempts >= MAX_OTP_ATTEMPTS) {
+      user.loginOtp = undefined;
+      user.otpExpiry = undefined;
+      user.loginOtpAttempts = 0;
+      await user.save({ validateBeforeSave: false });
+      throw new ApiError(
+        HTTP_STATUS.UNAUTHORIZED,
+        "Too many invalid attempts. Please login again.",
+      );
+    }
+
+    await user.save({ validateBeforeSave: false });
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Invalid OTP");
+  }
 
   // OTP correct → clear it and trust this device.
   user.loginOtp = undefined;
   user.otpExpiry = undefined;
+  user.loginOtpAttempts = 0;
 
   const newDeviceId = deviceId || crypto.randomUUID();
   const deviceHash = hashValue(newDeviceId);
@@ -212,55 +238,51 @@ export const removeAdminService = async ({
       "You cannot delete your own account",
     );
   }
-  const targetAdmin = await Admin.findOne({ email: adminEmail });
-  console.log(targetAdmin);
-  if (!targetAdmin) {
-    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Admin not found");
-  }
-
-  if (targetAdmin.role === "superadmin") {
-    throw new ApiError(HTTP_STATUS.FORBIDDEN, "Super admin cannot be deleted");
-  }
 
   const isPasswordCorrect =
     await superAdmin.comparePassword(superAdminPassword);
-
   if (!isPasswordCorrect) {
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Incorrect password");
   }
+  const targetAdmin = await Admin.findOneAndDelete({
+    email: adminEmail,
+    role: { $ne: "superadmin" },
+  });
 
-  await targetAdmin.deleteOne();
+  if (!targetAdmin) {
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Admin not found");
+  }
 
   return true;
 };
 
 export const refreshTokenService = async (inComingRefreshToken) => {
-  
-    if (!inComingRefreshToken)
-      throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not Authorized");
+  if (!inComingRefreshToken)
+    throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not Authorized");
 
-    const decoded = jwt.verify(
-      inComingRefreshToken,
-      envConfig.REFRESH_TOKEN_SECRET,
-    );
+  let decoded;
+  try {
+    decoded = jwt.verify(inComingRefreshToken, envConfig.REFRESH_TOKEN_SECRET);
+  } catch (error) {
+    throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Login session Expired");
+  }
 
-    const admin = await Admin.findById(decoded._id).select(
-      "+refreshToken +sessionId",
-    );
+  const admin = await Admin.findById(decoded._id).select(
+    "+refreshToken +sessionId",
+  );
 
-    if (!admin) throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not Authorized");
+  if (!admin) throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not Authorized");
 
-    if (admin.refreshToken !== inComingRefreshToken)
-      throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Login session Expired");
+  if (admin.refreshToken !== inComingRefreshToken)
+    throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Login session Expired");
 
-    const accessToken = admin.generateAccessToken();
-    const refreshToken = admin.generateRefreshToken();
+  const accessToken = admin.generateAccessToken();
+  const refreshToken = admin.generateRefreshToken();
 
-    admin.refreshToken = refreshToken;
-    await admin.save({ validateBeforeSave: false });
-    return {
-      accessToken,
-      refreshToken,
-    };
-  
+  admin.refreshToken = refreshToken;
+  await admin.save({ validateBeforeSave: false });
+  return {
+    accessToken,
+    refreshToken,
+  };
 };
