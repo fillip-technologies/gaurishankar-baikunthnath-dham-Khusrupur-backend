@@ -25,7 +25,9 @@ const getDeviceInfo = (req) => ({
 });
 
 const sanitizeUser = (user) => {
-  const userData = user.toObject();
+  // Accepts either a Mongoose document or a plain (lean) object.
+  const userData =
+    typeof user?.toObject === "function" ? user.toObject() : { ...user };
   delete userData.password;
   delete userData.refreshToken;
   delete userData.sessionId;
@@ -212,11 +214,39 @@ export const renewRefreshToken = asyncHandler(async (req, res) => {
 });
 
 export const getAdmin = asyncHandler(async (req, res) => {
-  const user = req.userDoc;
+  const decoded = req.user
+  const userId = req.params.id;
 
+  if(decoded?.role!=="superadmin" && decoded?._id!==userId){
+    throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not authorized");
+  }
+
+  const user = await Admin.findOne({_id: userId}).lean();
   if (!user) throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not authorized");
   const admin = sanitizeUser(user);
   res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, admin, "Admin fetched succesfullly"));
 });
+
+export const logOut = asyncHandler(async (req, res) => {
+  const decoded = req.user;
+
+  const user = await Admin.findOneAndUpdate(
+    { email: decoded.email },
+    {
+      refreshToken: "",
+      sessionId: "",
+    },
+  ).lean();
+
+  if (!user) throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not authorized");
+  console.log(user);
+  res
+    .status(HTTP_STATUS.OK)
+    .clearCookie("accessToken", httpOptions)
+    .clearCookie("refreshToken", httpOptions)
+    .json(new ApiResponse(HTTP_STATUS.OK, null, "User sucussfully logged out"));
+});
+
+// const removeOneAdmin;

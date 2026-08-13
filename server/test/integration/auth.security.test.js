@@ -22,7 +22,7 @@ describe("security hardening", () => {
   });
 
   it("rejects protected routes without authentication (401)", async () => {
-    const res = await request(app).get(`${BASE}/profile`);
+    const res = await request(app).get(`${BASE}/admins`);
     expect(res.status).toBe(401);
   });
 

@@ -6,6 +6,7 @@ import {
   getAdmin,
   listAdmin,
   login,
+  logOut,
   removeAdmin,
   renewRefreshToken,
   updatePassword,
@@ -50,17 +51,6 @@ authRouter.post(
   createAdmin,
 );
 
-authRouter.post(
-  "/remove_admin",
-  apiRateLimiter,
-  authenticate,
-  requireValidSession,
-  validate(removeAdminSchema),
-  removeAdmin,
-);
-
-// No `authenticate` here on purpose: refresh must work when the access token has
-// already expired. The refresh token itself is verified in refreshTokenService.
 authRouter.post("/refresh_token", apiRateLimiter, renewRefreshToken);
 
 authRouter.patch(
@@ -81,11 +71,24 @@ authRouter.get(
 );
 
 authRouter.get(
-  "/profile",
+  "/profile/:id",
+  apiRateLimiter,
+  authenticate,
+  getAdmin,
+);
+authRouter.post(
+  "/logout",
+  authenticate,
+  logOut,
+);
+authRouter.delete(
+  "/remove_admin",
   apiRateLimiter,
   authenticate,
   requireValidSession,
-  getAdmin,
+  validate(removeAdminSchema),
+  removeAdmin,
 );
+
 
 export { authRouter };

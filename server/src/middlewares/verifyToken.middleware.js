@@ -19,13 +19,9 @@ export const authenticate = (req, res, next) => {
   }
 };
 
-// Confirms the token's session is still the user's current session (enables
-// server-side revocation: logout-all, force-logout on password change, etc.).
-// Requires `authenticate` to have run first. Attaches the loaded document as
-// req.userDoc so handlers can reuse it without another query.
 export const requireValidSession = async (req, res, next) => {
   try {
-    const user = await Admin.findById(req.user._id).select("+sessionId");
+    const user = await Admin.findById(req.user._id).select("+sessionId").lean();
     if (!user || user.sessionId !== req.user.sessionId)
       throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not authorized");
 

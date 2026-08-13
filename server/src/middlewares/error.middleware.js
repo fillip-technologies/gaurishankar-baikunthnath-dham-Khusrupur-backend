@@ -39,6 +39,12 @@ export const errorHandler = (err, req, res, next) => {
     errors = Object.values(err.errors || {}).map((e) => e.message);
   }
 
+  // --- Malformed ObjectId / bad query cast (Mongoose CastError) → 400 ---
+  else if (err?.name === "CastError") {
+    statusCode = HTTP_STATUS.BAD_REQUEST;
+    message = `Invalid ${err.path || "value"}`;
+  }
+
   else if (err?.code === 11000) {
     statusCode = HTTP_STATUS.CONFLICT;
     message = "A record with the provided value already exists";

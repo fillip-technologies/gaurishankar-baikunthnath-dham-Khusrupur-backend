@@ -82,13 +82,24 @@ describe("admin management routes", () => {
       for (const a of res.body.data) expect(a).not.toHaveProperty("password");
     });
 
-    it("returns the caller's profile without sensitive fields", async () => {
+    it("returns an admin's profile without sensitive fields", async () => {
       const admin = await makeAdmin();
       const cookie = await authCookieFor(admin);
-      const res = await request(app).get(`${BASE}/profile`).set("Cookie", cookie);
+      const res = await request(app)
+        .get(`${BASE}/profile/${admin._id}`)
+        .set("Cookie", cookie);
       expect(res.status).toBe(200);
       expect(res.body.data).not.toHaveProperty("password");
       expect(res.body.data).not.toHaveProperty("refreshToken");
+    });
+
+    it("returns 400 for a malformed admin id", async () => {
+      const superAdmin = await makeSuperadmin();
+      const cookie = await authCookieFor(superAdmin);
+      const res = await request(app)
+        .get(`${BASE}/profile/not-a-valid-object-id`)
+        .set("Cookie", cookie);
+      expect(res.status).toBe(400);
     });
 
     it("rejects a token whose session has been revoked (401)", async () => {
@@ -96,7 +107,9 @@ describe("admin management routes", () => {
       const cookie = await authCookieFor(admin); // token bound to current sessionId
       // Rotate the session server-side → old token is now stale.
       await Admin.updateOne({ _id: admin._id }, { $set: { sessionId: "rotated" } });
-      const res = await request(app).get(`${BASE}/profile`).set("Cookie", cookie);
+      const res = await request(app)
+        .get(`${BASE}/profile/${admin._id}`)
+        .set("Cookie", cookie);
       expect(res.status).toBe(401);
     });
   });
@@ -107,7 +120,7 @@ describe("admin management routes", () => {
       const cookie = await authCookieFor(superAdmin);
       const target = await makeAdmin({ email: "target@test.com" });
       const res = await request(app)
-        .post(`${BASE}/remove_admin`)
+        .delete(`${BASE}/remove_admin`)
         .set("Cookie", cookie)
         .send({ adminEmail: "target@test.com", superAdminPassword: DEFAULT_PASSWORD });
       expect(res.status).toBe(200);
@@ -119,7 +132,7 @@ describe("admin management routes", () => {
       const cookie = await authCookieFor(superAdmin);
       await makeAdmin({ email: "target2@test.com" });
       const res = await request(app)
-        .post(`${BASE}/remove_admin`)
+        .delete(`${BASE}/remove_admin`)
         .set("Cookie", cookie)
         .send({ adminEmail: "target2@test.com", superAdminPassword: "wrongpass" });
       expect(res.status).toBe(401);
