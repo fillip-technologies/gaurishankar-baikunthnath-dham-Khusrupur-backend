@@ -14,7 +14,9 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@ishubhamx/panchangam-js": "^3.0.0",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.10.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "crypto": "^1.0.1",
@@ -28,6 +30,7 @@
     "nodemailer": "^9.0.5",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
+    "streamifier": "^0.1.1",
     "ua-parser-js": "^2.0.10",
     "zod": "^4.4.3"
   },

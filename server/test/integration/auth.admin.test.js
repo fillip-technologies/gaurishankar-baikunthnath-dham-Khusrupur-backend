@@ -103,13 +103,15 @@ describe("admin management routes", () => {
     });
 
     it("rejects a token whose session has been revoked (401)", async () => {
-      const admin = await makeAdmin();
-      const cookie = await authCookieFor(admin); // token bound to current sessionId
+      // Uses /admins because it runs requireValidSession (unlike /profile/:id).
+      const superAdmin = await makeSuperadmin();
+      const cookie = await authCookieFor(superAdmin); // token bound to current sessionId
       // Rotate the session server-side → old token is now stale.
-      await Admin.updateOne({ _id: admin._id }, { $set: { sessionId: "rotated" } });
-      const res = await request(app)
-        .get(`${BASE}/profile/${admin._id}`)
-        .set("Cookie", cookie);
+      await Admin.updateOne(
+        { _id: superAdmin._id },
+        { $set: { sessionId: "rotated" } },
+      );
+      const res = await request(app).get(`${BASE}/admins`).set("Cookie", cookie);
       expect(res.status).toBe(401);
     });
   });

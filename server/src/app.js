@@ -8,6 +8,7 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 import { authRouter } from "./services/auth/routes/auth.routes.js";
 import ApiError from "./utils/ApiError.js";
 import { HTTP_STATUS } from "./constants/httpStatus.constants.js";
+import addressRouter from "./services/auth/routes/address.routes.js";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/auth", addressRouter);
 
 // Unmatched routes → 404 (handled by errorHandler below).
 app.use((req, res, next) => {

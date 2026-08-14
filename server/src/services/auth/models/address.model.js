@@ -6,6 +6,7 @@ const addressSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
       required: true,
+      unique: true,
     },
 
     houseName: {
