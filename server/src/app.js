@@ -11,6 +11,7 @@ import { HTTP_STATUS } from "./constants/httpStatus.constants.js";
 import addressRouter from "./services/auth/routes/address.routes.js";
 import mediaRouter from "./services/media/routes/gallery.routes.js";
 import paymentRouter from "./services/payments/routes/payment.routes.js";
+import  prasadRouter  from "./services/bookings/routes/prasad.routes.js";
 
 const app = express();
 
@@ -48,7 +49,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/addresses", addressRouter);
 app.use("/api/v1/media", mediaRouter);
 app.use("/api/v1/payments", paymentRouter);
-
+app.use("/api/v1/prasad", prasadRouter);
 // Unmatched routes → 404 (handled by errorHandler below).
 app.use((req, res, next) => {
   next(new ApiError(HTTP_STATUS.NOT_FOUND, "Route not found"));

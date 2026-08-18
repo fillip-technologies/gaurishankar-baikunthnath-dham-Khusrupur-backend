@@ -7,6 +7,14 @@ const prasadSchema = new mongoose.Schema({
         required: true,
         trim: true,
     },
+    imageUrl : {
+        type: String,
+        trim: true,
+    },
+    publicId: {
+        type: String,
+        trim: true,
+    },
     priceperkg: {
         type: Number,
         required: true,
