@@ -6,7 +6,12 @@ import {
 } from "../../../middlewares/verifyToken.middleware";
 import { upload } from "../../../middlewares/multer.middleware";
 import { addPrasadSchema } from "../../../validations/prasad.validator";
-import { addPrasad, removePrasad } from "../controllers/prasad.controllers";
+import {
+  addPrasad,
+  getAllPrasad,
+  removePrasad,
+} from "../controllers/prasad.controllers";
+import { apiRateLimiter } from "../../../middlewares/rateLimiter.middleware";
 
 const prasadRouter = Router();
 
@@ -21,9 +26,13 @@ prasadRouter.post(
 
 prasadRouter.delete(
   "/remove/:id",
+  apiRateLimiter,
   authenticate,
   requireValidSession,
   removePrasad,
 );
+
+prasadRouter.get("/prasads", apiRateLimiter, getAllPrasad);
+
 
 export default prasadRouter;
