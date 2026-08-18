@@ -1,8 +1,8 @@
 import multer from "multer";
 
 import path from "path";
-import ApiError from "../utils/ApiError";
-import { HTTP_STATUS } from "../constants/httpStatus.constants";
+import ApiError from "../utils/ApiError.js";
+import { HTTP_STATUS } from "../constants/httpStatus.constants.js";
 
 const storage = multer.memoryStorage();
 

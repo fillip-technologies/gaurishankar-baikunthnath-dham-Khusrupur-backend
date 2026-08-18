@@ -24,6 +24,10 @@ process.env.RATE_LIMIT_LOGIN_MAX = "5";
 process.env.RATE_LIMIT_OTP_MAX = "50";
 process.env.RATE_LIMIT_WINDOW_MINUTES = "15";
 process.env.MAX_OTP_ATTEMPTS = "5";
+// Razorpay — deterministic secrets so HMAC signature paths are reproducible.
+process.env.RAZORPAY_KEY_ID = "rzp_test_key";
+process.env.RAZORPAY_KEY_SECRET = "rzp_test_secret";
+process.env.RAZORPAY_WEBHOOK_SECRET = "rzp_test_webhook_secret";
 
 // --- Global mocks --------------------------------------------------------------
 // nodemailer: prevents transporter.verify()/sendMail from hitting the network on

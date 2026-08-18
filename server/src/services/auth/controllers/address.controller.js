@@ -1,7 +1,6 @@
 import { HTTP_STATUS } from "../../../constants/httpStatus.constants.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
-import Address from "../models/address.model.js";
 import {
   getAddressService,
   updateAddressService,
@@ -30,7 +29,6 @@ export const updateAddress = asyncHandler(async (req, res) => {
 
 export const getAddress = asyncHandler(async (req, res) => {
   const address = await getAddressService({ decoded: req.user });
-    console.log(address)
   return res
     .status(HTTP_STATUS.OK)
     .json(

@@ -1,12 +1,14 @@
 import mongoose from "mongoose";
 
-const gallerySchema = new mongoose.Schema(
+const mediaCoverageSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
       required: true,
+      select: false
     },
+
     imageUrl: {
       type: String,
       required: true,
@@ -25,13 +27,11 @@ const gallerySchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    dataType: {
-      type: String,
-      enum: ["photos", "wallpaper", "videos"],
-      required: true,
-    },
-
     title: {
+      type: String,
+      trim: true,
+    },
+    description: {
       type: String,
       trim: true,
     },
@@ -41,6 +41,6 @@ const gallerySchema = new mongoose.Schema(
   },
 );
 
-const Gallery = mongoose.model("Gallery", gallerySchema);
+const MediaCoverage = mongoose.model("MediaCoverage", mediaCoverageSchema);
 
-export default Gallery;
+export default MediaCoverage;

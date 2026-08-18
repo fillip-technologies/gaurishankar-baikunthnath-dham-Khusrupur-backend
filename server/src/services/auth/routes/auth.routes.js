@@ -13,8 +13,6 @@ import {
   verifyLoginOtp,
 } from "../controllers/auth.controller.js";
 
-import { updateAddress } from "../controllers/address.controller.js";
-
 import {
   authenticate,
   requireValidSession,
@@ -35,8 +33,6 @@ import {
   passwordSchema,
   removeAdminSchema,
 } from "../../../validations/auth.validator.js";
-
-import { addressSchema } from "../../../validations/address.validator.js";
 
 authRouter.post("/login", loginLimiter, validate(loginSchema), login);
 
@@ -93,15 +89,6 @@ authRouter.delete(
   requireValidSession,
   validate(removeAdminSchema),
   removeAdmin,
-);
-
-authRouter.patch(
-  "/address",
-  apiRateLimiter,
-  authenticate,
-  requireValidSession,
-  validate(addressSchema),
-  updateAddress,
 );
 
 export { authRouter };

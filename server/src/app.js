@@ -9,6 +9,8 @@ import { authRouter } from "./services/auth/routes/auth.routes.js";
 import ApiError from "./utils/ApiError.js";
 import { HTTP_STATUS } from "./constants/httpStatus.constants.js";
 import addressRouter from "./services/auth/routes/address.routes.js";
+import mediaRouter from "./services/media/routes/gallery.routes.js";
+import paymentRouter from "./services/payments/routes/payment.routes.js";
 
 const app = express();
 
@@ -31,11 +33,21 @@ app.use(
   }),
 );
 
-app.use(express.json({ limit: "10kb" }));
+app.use(
+  express.json({
+    limit: "10kb",
+    // Keep the raw payload so the Razorpay webhook can verify its HMAC signature.
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
 app.use(cookieParser());
 
 app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/auth", addressRouter);
+app.use("/api/v1/addresses", addressRouter);
+app.use("/api/v1/media", mediaRouter);
+app.use("/api/v1/payments", paymentRouter);
 
 // Unmatched routes → 404 (handled by errorHandler below).
 app.use((req, res, next) => {
