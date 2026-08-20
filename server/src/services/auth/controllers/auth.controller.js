@@ -241,7 +241,7 @@ export const logOut = asyncHandler(async (req, res) => {
   ).lean();
 
   if (!user) throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not authorized");
-  console.log(user);
+
   res
     .status(HTTP_STATUS.OK)
     .clearCookie("accessToken", httpOptions)

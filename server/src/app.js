@@ -2,8 +2,10 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
+import pinoHttp from "pino-http";
 
 import { envConfig } from "./configs/env.config.js";
+import logger from "./utils/logger.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { authRouter } from "./services/auth/routes/auth.routes.js";
 import ApiError from "./utils/ApiError.js";
@@ -15,6 +17,7 @@ import prasadRouter from "./services/bookings/routes/prasad.routes.js";
 // Side-effect import: attaches the prasad-booking listeners to the payment event
 // bus. Without this, paid bookings would never be confirmed.
 import "./services/bookings/subscribers/prasadBooking.subscriber.js";
+import shringarRouter from "./services/media/routes/shringar.routes.js";
 
 const app = express();
 
@@ -23,6 +26,31 @@ const allowedOrigins = envConfig.ALLOWED_ORIGINS.split(",")
   .filter(Boolean);
 
 app.use(helmet());
+
+app.use(
+  pinoHttp({
+    logger,
+    // Don't log health-check or favicon noise
+    autoLogging: {
+      ignore: (req) => req.url === "/health" || req.url === "/favicon.ico",
+    },
+    // Customize the log message for each request
+    customSuccessMessage: (req, res) =>
+      `${req.method} ${req.url} → ${res.statusCode}`,
+    customErrorMessage: (req, res, err) =>
+      `${req.method} ${req.url} → ${res.statusCode} (${err.message})`,
+    // Strip verbose fields to keep dev logs clean
+    serializers: {
+      req: (req) => ({
+        method: req.method,
+        url: req.url,
+      }),
+      res: (res) => ({
+        statusCode: res.statusCode,
+      }),
+    },
+  }),
+);
 
 app.use(
   cors({
@@ -52,7 +80,7 @@ app.use("/api/v1/addresses", addressRouter);
 app.use("/api/v1/media", mediaRouter);
 app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/prasad", prasadRouter);
-
+app.use("/api/v1/shringar", shringarRouter);
 app.use((req, res, next) => {
   next(new ApiError(HTTP_STATUS.NOT_FOUND, "Route not found"));
 });

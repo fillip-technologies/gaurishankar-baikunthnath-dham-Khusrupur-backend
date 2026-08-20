@@ -2,6 +2,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const envConfig = {
+  NODE_ENV: process.env.NODE_ENV || "development",
+  LOG_LEVEL: process.env.LOG_LEVEL,
+  LOG_PRETTY: process.env.LOG_PRETTY,
   PORT: process.env.PORT,
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
   MONGO_URI: process.env.MONGO_URI,

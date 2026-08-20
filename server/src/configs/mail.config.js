@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { envConfig } from "./env.config.js";
+import logger from "../utils/logger.js";
 
 export const transporter = nodemailer.createTransport({
   host: envConfig.MAIL_HOST,
@@ -9,10 +10,8 @@ export const transporter = nodemailer.createTransport({
 });
 transporter.verify((error) => {
   if (error) {
-    console.error("SMTP Error:", error);
+    logger.error({ err: error }, "SMTP verification failed");
   } else {
-    console.log("SMTP Server is ready");
+    logger.info("✅ SMTP Server is ready");
   }
 });
-
-

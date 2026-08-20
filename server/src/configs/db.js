@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
-import dns, { resolve } from "node:dns";
+import dns from "node:dns";
 import { envConfig } from "./env.config.js";
+import logger from "../utils/logger.js";
 
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
@@ -9,20 +10,20 @@ export const connectDb = async () => {
   let retries = 0;
   while (tries > retries) {
     try {
-      console.log(`Connecting to MongoDB... Attempt ${retries + 1}`);
+      logger.info(`Connecting to MongoDB... Attempt ${retries + 1}`);
 
       await mongoose.connect(envConfig.MONGO_URI, {
         dbName: "Shree_Gaurishankar_Temple",
         serverSelectionTimeoutMS: 5000,
       });
 
-      console.log("✅ Mongoose Connected");
+      logger.info("✅ Mongoose Connected");
       return;
     } catch (err) {
       retries++;
-      console.error("❌Error connecting to the database \n", err.message);
+      logger.error({ err }, `❌ Error connecting to the database (attempt ${retries})`);
       if (retries >= tries) {
-        console.log("Maximum retries has been reached");
+        logger.fatal("Maximum retries reached — exiting");
         process.exit(1);
       }
 
