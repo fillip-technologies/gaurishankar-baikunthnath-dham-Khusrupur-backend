@@ -29,15 +29,15 @@ describe("POST /api/v1/prasad/add", () => {
       .post(ADD_URL)
       .set("Cookie", cookie)
       .field("prasadName", "Laddu")
-      .field("priceperkg", "250")
+      .field("pricePerKg", "250")
       .field("description", "Sweet besan laddu")
       .attach("file", PNG, "img.png");
 
     expect(res.status).toBe(200);
     expect(res.body.data.prasadName).toBe("Laddu");
-    // priceperkg arrives as a string in multipart form-data; z.coerce.number()
+    // pricePerKg arrives as a string in multipart form-data; z.coerce.number()
     // must have converted it to a number.
-    expect(res.body.data.priceperkg).toBe(250);
+    expect(res.body.data.pricePerKg).toBe(250);
     expect(res.body.data.imageUrl).toBe("https://cdn.test/prasad/img.png");
     expect(res.body.data.publicId).toBe("prasad/img");
   });
@@ -46,7 +46,7 @@ describe("POST /api/v1/prasad/add", () => {
     const res = await request(app)
       .post(ADD_URL)
       .field("prasadName", "Laddu")
-      .field("priceperkg", "250")
+      .field("pricePerKg", "250")
       .attach("file", PNG, "img.png");
 
     expect(res.status).toBe(401);
@@ -60,7 +60,7 @@ describe("POST /api/v1/prasad/add", () => {
       .post(ADD_URL)
       .set("Cookie", cookie)
       .field("prasadName", "Laddu")
-      .field("priceperkg", "250");
+      .field("pricePerKg", "250");
 
     expect(res.status).toBe(400);
   });
@@ -73,7 +73,7 @@ describe("POST /api/v1/prasad/add", () => {
       .post(ADD_URL)
       .set("Cookie", cookie)
       .field("prasadName", "Laddu")
-      .field("priceperkg", "-5")
+      .field("pricePerKg", "-5")
       .attach("file", PNG, "img.png");
 
     expect(res.status).toBe(400);
@@ -88,7 +88,7 @@ describe("POST /api/v1/prasad/add", () => {
         .post(ADD_URL)
         .set("Cookie", cookie)
         .field("prasadName", "Peda")
-        .field("priceperkg", "300")
+        .field("pricePerKg", "300")
         .attach("file", PNG, "img.png");
 
     expect((await send()).status).toBe(200);
@@ -105,7 +105,7 @@ describe("DELETE /api/v1/prasad/remove/:id", () => {
       prasadName: "Barfi",
       imageUrl: "https://cdn.test/prasad/barfi.png",
       publicId: "prasad/barfi",
-      priceperkg: 400,
+      pricePerKg: 400,
     });
 
     const res = await request(app)

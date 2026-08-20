@@ -172,7 +172,7 @@ export const updatePasswordService = async ({
 
   if (!isPasswordCorrect)
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Invalid password");
-
+  
   user.password = newpassword;
   await user.save({ validateBeforeSave: true });
   return user;

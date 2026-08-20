@@ -20,10 +20,21 @@ const gallerySchema = new mongoose.Schema(
     contentType: {
       type: String,
       trim: true,
+      select: false,
     },
     mimeType: {
       type: String,
       trim: true,
+      select: false,
+    },
+    occasion: {
+      type: String,
+      trim: true,
+    },
+    folder: {
+      type: String,
+      trim: true,
+      index: true,
     },
     dataType: {
       type: String,

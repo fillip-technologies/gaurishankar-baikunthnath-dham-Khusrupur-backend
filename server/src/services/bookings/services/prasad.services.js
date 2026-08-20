@@ -1,11 +1,14 @@
-import { HTTP_STATUS } from "../../../constants/httpStatus.constants";
-import ApiError from "../../../utils/ApiError";
-import { deleteFromCloudinary, uploadToCloudinary } from "../../../utils/cloudinary";
-import { Prasad } from "../models/prasad.model";
+import { HTTP_STATUS } from "../../../constants/httpStatus.constants.js";
+import ApiError from "../../../utils/ApiError.js";
+import {
+  deleteFromCloudinary,
+  uploadToCloudinary,
+} from "../../../utils/cloudinary.js";
+import { Prasad } from "../models/prasad.model.js";
 
 export const addPrasadService = async ({
   prasadName,
-  priceperkg,
+  pricePerKg,
   description,
   file,
 }) => {
@@ -25,7 +28,7 @@ export const addPrasadService = async ({
     prasadName,
     imageUrl: prasadImage.secure_url,
     publicId: prasadImage.public_id,
-    priceperkg,
+    pricePerKg,
     description,
   });
 

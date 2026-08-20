@@ -30,7 +30,7 @@ const paymentSchema = new mongoose.Schema(
       default: "general",
       index: true,
     },
-
+    
     reference: {
       // Model name, e.g. "Booking". Drives dynamic population via refPath.
       model: { type: String, default: null },
@@ -59,7 +59,7 @@ const paymentSchema = new mongoose.Schema(
       default: "created",
     },
 
-    // Free-form key/value passthrough (mirrors Razorpay order notes).
+   
     notes: {
       type: mongoose.Schema.Types.Mixed,
       default: {},

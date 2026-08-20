@@ -11,17 +11,19 @@ import {
   verifyPayment,
   handleWebhook,
   getPayment,
+  getAllPayment,
 } from "../controllers/payment.controller.js";
+import {
+  authenticate,
+  requireValidSession,
+} from "../../../middlewares/verifyToken.middleware.js";
 
 const paymentRouter = Router();
 
-// Server-to-server callback from Razorpay. Must stay above the parameterised
-// routes; authenticity is verified via the webhook signature.
+
 paymentRouter.post("/webhook", handleWebhook);
 
-// Standalone checkout — the payer submits their details with the order request,
-// no authentication required. Domain services (e.g. booking) instead call
-// createOrderService directly rather than going through this route.
+
 paymentRouter.post(
   "/order",
   apiRateLimiter,
@@ -36,6 +38,20 @@ paymentRouter.post(
   verifyPayment,
 );
 
-paymentRouter.get("/:id", apiRateLimiter, getPayment);
 
+paymentRouter.get(
+  "/all",
+  apiRateLimiter,
+  authenticate,
+  requireValidSession,
+  getAllPayment,
+);
+
+paymentRouter.get(
+  "/:id",
+  apiRateLimiter,
+  authenticate,
+  requireValidSession,
+  getPayment,
+);
 export default paymentRouter;

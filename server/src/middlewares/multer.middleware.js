@@ -6,7 +6,7 @@ import { HTTP_STATUS } from "../constants/httpStatus.constants.js";
 
 const storage = multer.memoryStorage();
 
-const allowedTypes = ["image", "videos"];
+const allowedTypes = ["image", "video", "audio"];
 
 const allowedExtension = [
   ".jpg",
@@ -53,7 +53,7 @@ const fileFilter = (req, file, cb) => {
 export const upload = multer({
     storage,
     limits: {
-        fileSize : 5*1024*1024
+        fileSize : 500*1024*1024
     },
     fileFilter
 })

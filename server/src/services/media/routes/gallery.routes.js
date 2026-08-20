@@ -2,13 +2,16 @@ import { Router } from "express";
 import { upload } from "../../../middlewares/multer.middleware.js";
 import { validate } from "../../../middlewares/validate.middleware.js";
 import {
+  galleryFoldersSchema,
   galleryGetSchema,
   galleryPostSchema,
   mediaSchema,
+  mediaUpdateSchema,
 } from "../../../validations/media.validator.js";
 import {
   deleteGalleryData,
   getGalleryData,
+  getGalleryFolders,
   uploadToGallery,
 } from "../controllers/gallery.controller.js";
 import {
@@ -21,6 +24,7 @@ import {
   deleteMedia,
   getAllMedia,
   getMedia,
+  updateMedia,
 } from "../controllers/mediaCoverage.controller.js";
 
 const mediaRouter = Router();
@@ -42,6 +46,13 @@ mediaRouter.delete(
 );
 
 mediaRouter.get(
+  "/gallery/folders",
+  apiRateLimiter,
+  validate(galleryFoldersSchema),
+  getGalleryFolders,
+);
+
+mediaRouter.get(
   "/gallery",
   apiRateLimiter,
   validate(galleryGetSchema),
@@ -55,6 +66,15 @@ mediaRouter.post(
   upload.single("file"),
   validate(mediaSchema),
   createMedia,
+);
+
+mediaRouter.patch(
+  "/mediaCoverage/:id",
+  apiRateLimiter,
+  authenticate,
+  upload.single("file"),
+  validate(mediaUpdateSchema),
+  updateMedia,
 );
 
 mediaRouter.delete(

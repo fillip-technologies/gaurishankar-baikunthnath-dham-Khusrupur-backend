@@ -6,21 +6,41 @@ import MediaCoverage from "../models/mediaCoverage.model.js";
 import {
   createMediaService,
   deleteMediaService,
+  updateMediaService,
 } from "../services/mediaCoverageService.services.js";
 
 export const createMedia = asyncHandler(async (req, res) => {
-  const id = req.user._id;
-  const { title, description } = req.validated.body;
   const file = req.file;
 
   if (!file) throw new ApiError(HTTP_STATUS.BAD_REQUEST, "No file uploaded");
 
-  const response = await createMediaService({ id, title, description, file });
+  const response = await createMediaService({
+    fields: { ...req.validated.body, userId: req.user._id },
+    file,
+  });
 
   res
     .status(HTTP_STATUS.CREATED)
     .json(
       new ApiResponse(HTTP_STATUS.CREATED, response, "Media created successfully"),
+    );
+});
+
+export const updateMedia = asyncHandler(async (req, res) => {
+  const mediaId = req.params?.id;
+  if (!mediaId)
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "No media id provided");
+
+  const response = await updateMediaService({
+    mediaId,
+    fields: req.validated.body,
+    file: req.file,
+  });
+
+  res
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiResponse(HTTP_STATUS.OK, response, "Media updated successfully"),
     );
 });
 
@@ -64,19 +84,15 @@ export const getMedia = asyncHandler(async (req, res) => {
 
 export const getAllMedia = asyncHandler(async (req, res) => {
   const allMedia = await MediaCoverage.find().sort({ createdAt: -1 }).lean();
-  if (allMedia.length <= 0)
-    return res
-      .status(HTTP_STATUS.NOT_FOUND)
-      .json(
-        new ApiResponse(HTTP_STATUS.NOT_FOUND, allMedia, "No media is found"),
-      );
   return res
     .status(HTTP_STATUS.OK)
     .json(
       new ApiResponse(
         HTTP_STATUS.OK,
         allMedia,
-        "All media fetched succesfully",
+        allMedia.length
+          ? "All media fetched succesfully"
+          : "No media is found",
       ),
     );
 });

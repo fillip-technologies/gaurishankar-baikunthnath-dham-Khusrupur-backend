@@ -105,7 +105,9 @@ export const createOrderService = async ({
     currency,
     payer,
     purpose,
-    reference: reference ? { model: reference.model, id: reference.id } : undefined,
+    reference: reference
+      ? { model: reference.model, id: reference.id }
+      : undefined,
     razorpayOrderId: order.id,
     status: "created",
   });
@@ -300,5 +302,13 @@ export const getPaymentByIdService = async ({ paymentId }) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Payment not found");
   }
 
+  return payment;
+};
+
+export const getAllPaymentService = async () => {
+  const payment = await Payment.find().sort({ createdAt: -1 });
+  if (!payment) throw new ApiError(HTTP_STATUS.NOT_FOUND, "Payment not found");
+  if (payment.length <= 0)
+    return res.status(HTTP_STATUS.NO_CONTENT, "No paymnet to show");
   return payment;
 };

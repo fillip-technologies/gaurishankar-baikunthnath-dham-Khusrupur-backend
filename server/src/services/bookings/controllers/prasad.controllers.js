@@ -1,18 +1,18 @@
-import { HTTP_STATUS } from "../../../constants/httpStatus.constants";
-import ApiResponse from "../../../utils/ApiResponse";
-import { asyncHandler } from "../../../utils/asyncHandler";
-import { Prasad } from "../models/prasad.model";
+import { HTTP_STATUS } from "../../../constants/httpStatus.constants.js";
+import ApiResponse from "../../../utils/ApiResponse.js";
+import { asyncHandler } from "../../../utils/asyncHandler.js";
+import { Prasad } from "../models/prasad.model.js";
 import {
   addPrasadService,
   deletePrasadService,
-} from "../services/prasad.services";
+} from "../services/prasad.services.js";
 
 export const addPrasad = asyncHandler(async (req, res) => {
-  const { prasadName, priceperkg, description } = req.validated.body;
+  const { prasadName, pricePerKg, description } = req.validated.body;
   const file = req.file;
   const response = await addPrasadService({
     prasadName,
-    priceperkg,
+    pricePerKg,
     description,
     file,
   });

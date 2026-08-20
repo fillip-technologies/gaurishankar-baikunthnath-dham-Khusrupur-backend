@@ -15,7 +15,7 @@ const prasadSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
-    priceperkg: {
+    pricePerKg: {
         type: Number,
         required: true,
     },
