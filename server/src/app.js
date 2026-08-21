@@ -14,19 +14,17 @@ import addressRouter from "./services/auth/routes/address.routes.js";
 import mediaRouter from "./services/media/routes/gallery.routes.js";
 import paymentRouter from "./services/payments/routes/payment.routes.js";
 import prasadRouter from "./services/bookings/routes/prasad.routes.js";
-// Side-effect import: attaches the prasad-booking listeners to the payment event
-// bus. Without this, paid bookings would never be confirmed.
-import "./services/bookings/subscribers/prasadBooking.subscriber.js";
 import shringarRouter from "./services/media/routes/shringar.routes.js";
+import eventRouter from "./services/media/routes/event.routes.js";
+import "./services/bookings/subscribers/prasadBooking.subscriber.js";
+
 
 const app = express();
 
 const allowedOrigins = envConfig.ALLOWED_ORIGINS.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
-
 app.use(helmet());
-
 app.use(
   pinoHttp({
     logger,
@@ -81,6 +79,9 @@ app.use("/api/v1/media", mediaRouter);
 app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/prasad", prasadRouter);
 app.use("/api/v1/shringar", shringarRouter);
+app.use("/api/v1/event", eventRouter);
+
+
 app.use((req, res, next) => {
   next(new ApiError(HTTP_STATUS.NOT_FOUND, "Route not found"));
 });

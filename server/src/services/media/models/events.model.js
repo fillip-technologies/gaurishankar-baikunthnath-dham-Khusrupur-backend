@@ -7,6 +7,12 @@ const eventSchema = new mongoose.Schema(
       ref: "Admin",
       required: true,
     },
+    imageurl: {
+      type: String,
+    },
+    publicId: {
+      type: String,
+    },
     eventName: {
       type: String,
       trim: true,
@@ -20,6 +26,10 @@ const eventSchema = new mongoose.Schema(
     description: {
       type: String,
       trim: true,
+    },
+    eventDate: {
+      type: Date,
+      required: true,
     },
   },
   { timestamps: true },
