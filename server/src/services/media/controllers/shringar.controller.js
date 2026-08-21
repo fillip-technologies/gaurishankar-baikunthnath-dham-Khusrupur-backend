@@ -81,7 +81,7 @@ export const getShringar = asyncHandler(async (req, res) => {
   const id = req.params?.id;
   if (!id) throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Id needs to be passed");
 
-  const shringar = await Shringar.findById(id).lean();
+  const shringar = await Shringar.findOne().sort({createdAt: -1});
   if (!shringar)
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Request data can not be found");
   res
