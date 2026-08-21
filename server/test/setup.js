@@ -1,6 +1,7 @@
 import { beforeAll, afterAll, afterEach, vi } from "vitest";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
+import pino from "pino";
 
 // --- Deterministic test environment (set BEFORE any app/config import) ---------
 // dotenv (loaded inside env.config.js) does not override already-set vars, so
@@ -42,8 +43,9 @@ vi.mock("nodemailer", () => ({
 }));
 
 // logger: silence pino output during the run.
+const silentLogger = pino({ level: "silent" });
 vi.mock("../src/utils/logger.js", () => ({
-  default: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
+  default: silentLogger,
 }));
 
 // --- In-memory Mongo lifecycle -------------------------------------------------

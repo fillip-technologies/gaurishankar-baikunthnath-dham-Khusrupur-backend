@@ -14,7 +14,10 @@ export const addShringar = asyncHandler(async (req, res) => {
   const { title } = req.body;
   if (!file) throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Add a image to add!");
   if (title && title.length <= 2)
-    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Title must be atleast 3 character long");
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      "Title must be atleast 3 character long",
+    );
 
   const upload = await uploadToCloudinary(file.buffer);
   if (!upload)
@@ -39,9 +42,9 @@ export const addShringar = asyncHandler(async (req, res) => {
 });
 
 export const deleteShringar = asyncHandler(async (req, res) => {
-  const { id } = req.params.id;
-
+  const id = req.params?.id;
   const shringar = await Shringar.findById(id);
+  
   if (!shringar)
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "request data not found");
   await deleteFromCloudinary(shringar.publicId);
@@ -60,7 +63,7 @@ export const deleteShringar = asyncHandler(async (req, res) => {
 });
 
 export const getAllShringar = asyncHandler(async (req, res) => {
-  const shringar = Shringar.find().sort({ createdAt: -1 });
+  const shringar = await Shringar.find().sort({ createdAt: -1 });
 
   if (shringar.length <= 0)
     return res
@@ -72,4 +75,16 @@ export const getAllShringar = asyncHandler(async (req, res) => {
   return res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, shringar, "All shringar are found"));
+});
+
+export const getShringar = asyncHandler(async (req, res) => {
+  const id = req.params?.id;
+  if (!id) throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Id needs to be passed");
+
+  const shringar = await Shringar.findById(id).lean();
+  if (!shringar)
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Request data can not be found");
+  res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, shringar, "OK"));
 });

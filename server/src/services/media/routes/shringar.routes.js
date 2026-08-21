@@ -8,6 +8,7 @@ import {
   addShringar,
   deleteShringar,
   getAllShringar,
+  getShringar,
 } from "../controllers/shringar.controller.js";
 import { apiRateLimiter } from "../../../middlewares/rateLimiter.middleware.js";
 
@@ -23,13 +24,13 @@ shringarRouter.post(
 );
 
 shringarRouter.delete(
-  "/remove:id",
+  "/remove/:id",
   apiRateLimiter,
   authenticate,
   requireValidSession,
   deleteShringar,
 );
 
-shringarRouter.get("/", apiRateLimiter, getAllShringar);
-
+shringarRouter.get("/all", apiRateLimiter, getAllShringar);
+shringarRouter.get("/:id", apiRateLimiter, getShringar);
 export default shringarRouter;
