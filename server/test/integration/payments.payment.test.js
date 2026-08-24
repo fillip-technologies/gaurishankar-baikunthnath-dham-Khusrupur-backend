@@ -23,6 +23,7 @@ import {
   paymentEvents,
   PAYMENT_EVENTS,
 } from "../../src/services/payments/events/payment.events.js";
+import { makeSuperadmin, authCookieFor } from "../helpers/factories.js";
 
 const KEY_SECRET = "rzp_test_secret";
 const WEBHOOK_SECRET = "rzp_test_webhook_secret";
@@ -266,8 +267,12 @@ describe("POST /api/v1/payments/webhook", () => {
 describe("GET /api/v1/payments/:id", () => {
   it("returns the payment with its embedded payer details (200)", async () => {
     const payment = await seedOrder("order_GET1");
+    const admin = await makeSuperadmin();
+    const cookie = await authCookieFor(admin);
 
-    const res = await request(app).get(`/api/v1/payments/${payment._id}`);
+    const res = await request(app)
+      .get(`/api/v1/payments/${payment._id}`)
+      .set("Cookie", cookie);
 
     expect(res.status).toBe(200);
     expect(res.body.data.razorpayOrderId).toBe("order_GET1");
@@ -275,9 +280,12 @@ describe("GET /api/v1/payments/:id", () => {
   });
 
   it("returns 404 for an unknown payment id", async () => {
-    const res = await request(app).get(
-      "/api/v1/payments/64b7f0000000000000000000",
-    );
+    const admin = await makeSuperadmin();
+    const cookie = await authCookieFor(admin);
+
+    const res = await request(app)
+      .get("/api/v1/payments/64b7f0000000000000000000")
+      .set("Cookie", cookie);
 
     expect(res.status).toBe(404);
   });

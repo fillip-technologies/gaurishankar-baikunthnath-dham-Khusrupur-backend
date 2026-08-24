@@ -1,10 +1,10 @@
 import { HTTP_STATUS } from "../../../constants/httpStatus.constants.js";
 import ApiError from "../../../utils/ApiError.js";
-import { createOrderService } from "../../payments/services/payment.services.js";
+import { createOrderService } from "../../payments/services/payment.service.js";
 import { Prasad } from "../models/prasad.model.js";
 import { PrasadBooking } from "../models/prasadBooking.model.js";
 
-/** 
+/**
  * Creates a prasad booking and a matching Razorpay order.
  * The price is ALWAYS computed here from the catalogue (prasad.pricePerKg) — the
  * client only chooses the prasad and quantity, never the amount. Booking depends
@@ -25,7 +25,7 @@ export const createPrasadBookingService = async ({
   if (amount < 100) {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Order amount is too small");
   }
-  
+
   // 1. Record the booking in a not-yet-paid state.
   const booking = await PrasadBooking.create({
     prasad: prasad._id,

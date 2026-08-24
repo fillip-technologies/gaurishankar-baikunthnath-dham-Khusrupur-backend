@@ -6,7 +6,8 @@ import {
   verifyPaymentService,
   handleWebhookService,
   getPaymentByIdService,
-} from "../services/payment.services.js";
+  getAllPaymentService,
+} from "../services/payment.service.js";
 import ApiError from "../../../utils/ApiError.js";
 
 export const createOrder = asyncHandler(async (req, res) => {
@@ -76,6 +77,14 @@ export const getAllPayment = asyncHandler(async (req, res) => {
   if (user.role !== "superadmin" && user.role !== "accountant")
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "You are unauthorized");
 
-  const payment = await getAllPaymentService();
-  return res.status(HTTP_STATUS.OK, payment, "All payments");
+  const payments = await getAllPaymentService();
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiResponse(
+        HTTP_STATUS.OK,
+        payments,
+        payments.length ? "All payments" : "No payments to show",
+      ),
+    );
 });

@@ -17,7 +17,10 @@ import prasadRouter from "./services/bookings/routes/prasad.routes.js";
 import shringarRouter from "./services/media/routes/shringar.routes.js";
 import eventRouter from "./services/media/routes/event.routes.js";
 import "./services/bookings/subscribers/prasadBooking.subscriber.js";
-
+import "./services/bookings/subscribers/poojaBooking.subscriber.js";
+import "./services/bookings/subscribers/roomBooking.subscriber.js";
+import  poojaRouter  from "./services/bookings/routes/pooja.routes.js";
+import roomRouter from "./services/bookings/routes/room.routes.js";
 
 const app = express();
 
@@ -80,7 +83,8 @@ app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/prasad", prasadRouter);
 app.use("/api/v1/shringar", shringarRouter);
 app.use("/api/v1/event", eventRouter);
-
+app.use("/api/v1/pooja", poojaRouter);
+app.use("/api/v1/rooms", roomRouter);
 
 app.use((req, res, next) => {
   next(new ApiError(HTTP_STATUS.NOT_FOUND, "Route not found"));

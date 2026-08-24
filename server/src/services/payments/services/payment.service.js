@@ -306,9 +306,6 @@ export const getPaymentByIdService = async ({ paymentId }) => {
 };
 
 export const getAllPaymentService = async () => {
-  const payment = await Payment.find().sort({ createdAt: -1 });
-  if (!payment) throw new ApiError(HTTP_STATUS.NOT_FOUND, "Payment not found");
-  if (payment.length <= 0)
-    return res.status(HTTP_STATUS.NO_CONTENT, "No paymnet to show");
-  return payment;
+  const payments = await Payment.find().sort({ createdAt: -1 });
+  return payments;
 };

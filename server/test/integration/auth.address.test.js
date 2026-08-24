@@ -3,14 +3,14 @@ import request from "supertest";
 import app from "../../src/app.js";
 import { makeAdmin, authCookieFor } from "../helpers/factories.js";
 
-const BASE = "/api/v1/auth";
+const BASE = "/api/v1/addresses";
 
-describe("PATCH /address", () => {
+describe("PATCH /", () => {
   it("creates the address on first update", async () => {
     const admin = await makeAdmin();
     const cookie = await authCookieFor(admin);
     const res = await request(app)
-      .patch(`${BASE}/address`)
+      .patch(`${BASE}`)
       .set("Cookie", cookie)
       .send({ state: "Bihar" });
 
@@ -24,12 +24,12 @@ describe("PATCH /address", () => {
     const cookie = await authCookieFor(admin);
 
     await request(app)
-      .patch(`${BASE}/address`)
+      .patch(`${BASE}`)
       .set("Cookie", cookie)
       .send({ state: "Bihar" });
 
     const res = await request(app)
-      .patch(`${BASE}/address`)
+      .patch(`${BASE}`)
       .set("Cookie", cookie)
       .send({ zipcode: "801301" });
 
@@ -44,7 +44,7 @@ describe("PATCH /address", () => {
     const admin = await makeAdmin();
     const cookie = await authCookieFor(admin);
     const res = await request(app)
-      .patch(`${BASE}/address`)
+      .patch(`${BASE}`)
       .set("Cookie", cookie)
       .send({});
     expect(res.status).toBe(200);
@@ -54,14 +54,14 @@ describe("PATCH /address", () => {
     const admin = await makeAdmin();
     const cookie = await authCookieFor(admin);
     const res = await request(app)
-      .patch(`${BASE}/address`)
+      .patch(`${BASE}`)
       .set("Cookie", cookie)
       .send({ zipcode: "123" });
     expect(res.status).toBe(400);
   });
 
   it("rejects an unauthenticated request (401)", async () => {
-    const res = await request(app).patch(`${BASE}/address`).send({ state: "Bihar" });
+    const res = await request(app).patch(`${BASE}`).send({ state: "Bihar" });
     expect(res.status).toBe(401);
   });
 });

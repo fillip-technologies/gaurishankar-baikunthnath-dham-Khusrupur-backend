@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
-const pujaSchema = new mongoose.Schema(
+const poojaSchema = new mongoose.Schema(
   {
-    pujaName: {
+    poojaName: {
       type: String,
       trim: true,
       unique: true,
@@ -31,4 +31,4 @@ const pujaSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-const Puja = mongoose.model("Puja", pujaSchema);
+export const Pooja = mongoose.model("Pooja", poojaSchema);

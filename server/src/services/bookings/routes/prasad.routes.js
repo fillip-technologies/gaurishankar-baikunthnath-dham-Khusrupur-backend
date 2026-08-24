@@ -14,12 +14,12 @@ import {
   addPrasad,
   getAllPrasad,
   removePrasad,
-} from "../controllers/prasad.controllers.js";
+} from "../controllers/prasad.controller.js";
 import {
   bookPrasad,
   getAllBookings,
   verifyPrasadBooking,
-} from "../controllers/booking.controllers.js";
+} from "../controllers/booking.controller.js";
 import { apiRateLimiter } from "../../../middlewares/rateLimiter.middleware.js";
 
 const prasadRouter = Router();

@@ -5,7 +5,7 @@ import { Prasad } from "../models/prasad.model.js";
 import {
   addPrasadService,
   deletePrasadService,
-} from "../services/prasad.services.js";
+} from "../services/prasad.service.js";
 
 export const addPrasad = asyncHandler(async (req, res) => {
   const { prasadName, pricePerKg, description } = req.validated.body;
