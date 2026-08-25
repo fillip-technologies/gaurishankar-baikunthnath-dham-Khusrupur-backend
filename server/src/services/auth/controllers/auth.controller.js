@@ -1,5 +1,7 @@
 import {
   httpOptions,
+  accessCookieOptions,
+  refreshCookieOptions,
   deviceCookieOptions,
   challengeCookieOptions,
 } from "../../../constants/httpOptions.constants.js";
@@ -68,8 +70,8 @@ export const login = asyncHandler(async (req, res) => {
 
   res
     .status(HTTP_STATUS.OK)
-    .cookie("accessToken", result.accessToken, httpOptions)
-    .cookie("refreshToken", result.refreshToken, httpOptions)
+    .cookie("accessToken", result.accessToken, accessCookieOptions)
+    .cookie("refreshToken", result.refreshToken, refreshCookieOptions)
     .cookie("deviceId", result.deviceId, deviceCookieOptions)
     .json(
       new ApiResponse(
@@ -107,8 +109,8 @@ export const verifyLoginOtp = asyncHandler(async (req, res) => {
   res
     .status(HTTP_STATUS.OK)
     .clearCookie("loginChallenge", httpOptions)
-    .cookie("accessToken", accessToken, httpOptions)
-    .cookie("refreshToken", refreshToken, httpOptions)
+    .cookie("accessToken", accessToken, accessCookieOptions)
+    .cookie("refreshToken", refreshToken, refreshCookieOptions)
     .cookie("deviceId", newDeviceId, deviceCookieOptions)
     .json(
       new ApiResponse(HTTP_STATUS.OK, { user: userData }, "Login successful"),
@@ -208,8 +210,8 @@ export const renewRefreshToken = asyncHandler(async (req, res) => {
     await refreshTokenService(inComingRefreshToken);
 
   res
-    .cookie("accessToken", accessToken, httpOptions)
-    .cookie("refreshToken", refreshToken, httpOptions)
+    .cookie("accessToken", accessToken, accessCookieOptions)
+    .cookie("refreshToken", refreshToken, refreshCookieOptions)
     .json({ message: "token updated" });
 });
 

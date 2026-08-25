@@ -9,6 +9,8 @@ import {
 } from "../services/prasadBooking.service.js";
 import {
   createPoojaBookingService,
+  createManualPoojaBookingService,
+  updatePoojaBookingStatusService,
   getAllPoojaBookingsService,
 } from "../services/poojaBooking.service.js";
 import {
@@ -110,12 +112,13 @@ export const getAllBookings = asyncHandler(async (req, res) => {
 // Public checkout: the devotee picks a pooja + quantity; the server prices it
 // from the catalogue and returns a Razorpay order.
 export const bookPooja = asyncHandler(async (req, res) => {
-  const { poojaId, quantity, payer } = req.validated.body;
+  const { poojaId, quantity, payer, bookingDate } = req.validated.body;
 
   const result = await createPoojaBookingService({
     poojaId,
     quantity,
     payer,
+    bookingDate,
     ipAddress: req.ip,
     userAgent: req.get("user-agent"),
   });
@@ -160,9 +163,52 @@ export const verifyPoojaBooking = asyncHandler(async (req, res) => {
     );
 });
 
+// Admin: log a pooja booking taken offline (cash/UPI at the counter). No
+// Razorpay order is created — the booking is stored already confirmed with the
+// payer snapshot inline. The receipt email is fire-and-forget and simply no-ops
+// when the devotee gave no email.
+export const createManualPoojaBooking = asyncHandler(async (req, res) => {
+  const { poojaId, quantity, payer, bookingDate, amount, paymentMode } =
+    req.validated.body;
+
+  const result = await createManualPoojaBookingService({
+    poojaId,
+    quantity,
+    payer,
+    bookingDate,
+    amount,
+    paymentMode,
+  });
+
+  sendPoojaReceiptService(result.bookingId).catch(() => {});
+
+  return res
+    .status(HTTP_STATUS.CREATED)
+    .json(
+      new ApiResponse(HTTP_STATUS.CREATED, result, "Pooja booking recorded"),
+    );
+});
+
+// Admin: transition a booking's status from the dashboard (confirm / mark
+// completed / cancel). `status` is restricted to the admin-settable subset by
+// the validator.
+export const updatePoojaBookingStatus = asyncHandler(async (req, res) => {
+  const { id } = req.validated.params;
+  const { status } = req.validated.body;
+
+  const booking = await updatePoojaBookingStatusService({
+    bookingId: id,
+    status,
+  });
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, booking, "Booking status updated"));
+});
+
 // Admin: list every pooja booking (newest first). Optional filters:
-// `?status=pending|confirmed|failed`, a `?from=YYYY-MM-DD&to=YYYY-MM-DD`
-// createdAt date range, and `?page`/`?limit` pagination.
+// `?status=pending|confirmed|completed|cancelled|failed`, a
+// `?from=YYYY-MM-DD&to=YYYY-MM-DD` createdAt date range, and `?page`/`?limit`.
 export const getAllPoojaBookings = asyncHandler(async (req, res) => {
   const { status, from, to, page, limit } = req.query;
 

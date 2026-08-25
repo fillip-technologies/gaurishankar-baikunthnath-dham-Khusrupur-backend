@@ -14,6 +14,7 @@ export const createPoojaBookingService = async ({
   poojaId,
   quantity,
   payer,
+  bookingDate,
   ipAddress,
   userAgent,
 }) => {
@@ -31,6 +32,7 @@ export const createPoojaBookingService = async ({
     pooja: pooja._id,
     quantity,
     amount,
+    bookingDate,
     status: "pending",
   });
 
@@ -53,11 +55,92 @@ export const createPoojaBookingService = async ({
     bookingId: booking._id,
     poojaName: pooja.poojaName,
     quantity,
+    bookingDate: booking.bookingDate,
     ...order, // key, orderId, amount, currency, paymentId, payer
   };
 };
 
-const BOOKING_STATUSES = ["pending", "confirmed", "failed"];
+/**
+ * Records a pooja booking taken offline by an admin (cash/UPI at the counter).
+ * Unlike the online path there is no Razorpay order or Payment document: the
+ * booking is created already `confirmed`, with the payer snapshot + payment mode
+ * stored inline. The amount is priced from the catalogue unless the admin passes
+ * an explicit `amount` (rupees) override.
+ */
+export const createManualPoojaBookingService = async ({
+  poojaId,
+  quantity,
+  payer,
+  bookingDate,
+  amount: amountOverrideRupees,
+  paymentMode,
+}) => {
+  const pooja = await Pooja.findById(poojaId).lean();
+  if (!pooja) throw new ApiError(HTTP_STATUS.NOT_FOUND, "Pooja not found");
+
+  // Everything is stored in paise, matching the online path. The optional
+  // override is in rupees, so convert it the same way as the catalogue price.
+  const amount =
+    amountOverrideRupees != null
+      ? Math.round(amountOverrideRupees * 100)
+      : Math.round(pooja.price * quantity * 100);
+
+  if (amount < 100) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Booking amount is too small");
+  }
+
+  const booking = await PoojaBooking.create({
+    pooja: pooja._id,
+    quantity,
+    amount,
+    bookingDate,
+    status: "confirmed",
+    source: "manual",
+    payer: {
+      name: payer.name,
+      email: payer.email || undefined,
+      phone: payer.phone,
+    },
+    paymentMode: paymentMode || null,
+  });
+
+  return {
+    bookingId: booking._id,
+    poojaName: pooja.poojaName,
+    quantity,
+    bookingDate: booking.bookingDate,
+    amount: booking.amount,
+    status: booking.status,
+  };
+};
+
+/**
+ * Admin: transition a booking's status from the dashboard (confirm / mark
+ * completed / cancel). The caller (validator) restricts `status` to the
+ * admin-settable subset; system statuses (pending/failed) are not reachable here.
+ */
+export const updatePoojaBookingStatusService = async ({ bookingId, status }) => {
+  const booking = await PoojaBooking.findByIdAndUpdate(
+    bookingId,
+    { status },
+    { returnDocument: "after" },
+  )
+    .populate("pooja", "poojaName price")
+    .populate("payment", "payer status razorpayPaymentId amount currency")
+    .lean();
+
+  if (!booking) throw new ApiError(HTTP_STATUS.NOT_FOUND, "Booking not found");
+
+  return booking;
+};
+
+const BOOKING_STATUSES = [
+  "pending",
+  "confirmed",
+  "completed",
+  "cancelled",
+  "failed",
+];
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;

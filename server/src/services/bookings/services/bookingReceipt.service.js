@@ -215,8 +215,10 @@ export const sendPoojaReceiptService = async (bookingId) => {
   if (!booking) return;
 
   try {
-    const { pooja, payment, quantity, amount, createdAt } = booking;
-    const payer = payment?.payer || {};
+    const { pooja, payment, quantity, amount, createdAt, bookingDate } = booking;
+    // Online bookings carry the payer on the linked Payment; manual (counter)
+    // bookings have no Payment and keep the payer snapshot on the booking itself.
+    const payer = payment?.payer || booking.payer || {};
 
     if (!payer.email) {
       logger.warn(
@@ -238,11 +240,26 @@ export const sendPoojaReceiptService = async (bookingId) => {
       bookingId: String(booking._id),
       paymentId: payment?.razorpayPaymentId,
       bookingType: "Pooja",
-      poojaName: pooja?.poojaName,
-      price: pooja?.price,
+      // `itemName`/`unitPrice` are the fields the invoice PDF + email template
+      // understand (poojaName/price are ignored by both), so the pooja name and
+      // per-unit price render as a proper line item.
+      itemName: pooja?.poojaName,
+      itemLabel: "Pooja",
+      unitPrice: pooja?.price,
       quantity,
       amountRupees,
       bookingTime,
+      details: bookingDate
+        ? [
+            {
+              label: "Pooja Date",
+              value: new Date(bookingDate).toLocaleDateString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                dateStyle: "medium",
+              }),
+            },
+          ]
+        : [],
     });
   } catch (error) {
     logger.error(

@@ -9,6 +9,12 @@ const LOGIN_MAX = Number(envConfig.RATE_LIMIT_LOGIN_MAX) || 5;
 const OTP_MAX = Number(envConfig.RATE_LIMIT_OTP_MAX) || 10;
 const WINDOW_MINUTES = Number(envConfig.RATE_LIMIT_WINDOW_MINUTES) || 15;
 
+// In development the 15-minute login lockout makes iterating painful, so the
+// window shrinks to 30 seconds — a 429 clears almost immediately. Production
+// keeps the full configured window for real brute-force protection.
+const LOGIN_WINDOW_MS =
+  envConfig.NODE_ENV === "production" ? minutes(WINDOW_MINUTES) : 30 * 1000;
+
 export const apiRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   limit: 100, 
@@ -25,7 +31,7 @@ export const apiRateLimiter = rateLimit({
 
 
 export const loginLimiter = rateLimit({
-  windowMs: minutes(WINDOW_MINUTES),
+  windowMs: LOGIN_WINDOW_MS,
   limit: LOGIN_MAX,
   standardHeaders: "draft-8",
   legacyHeaders: false,

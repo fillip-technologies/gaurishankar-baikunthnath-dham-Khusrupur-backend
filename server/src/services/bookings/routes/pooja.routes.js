@@ -10,6 +10,8 @@ import {
   poojaSchema,
   updatePoojaSchema,
   bookPoojaSchema,
+  manualPoojaBookingSchema,
+  updatePoojaBookingStatusSchema,
   verifyPoojaBookingSchema,
 } from "../../../validations/pooja.validator.js";
 import {
@@ -20,6 +22,8 @@ import {
 } from "../controllers/pooja.controller.js";
 import {
   bookPooja,
+  createManualPoojaBooking,
+  updatePoojaBookingStatus,
   getAllPoojaBookings,
   verifyPoojaBooking,
 } from "../controllers/booking.controller.js";
@@ -67,6 +71,28 @@ poojaRouter.get(
   authenticate,
   requireValidSession,
   getAllPoojaBookings,
+);
+
+// Manually record an offline booking (cash/UPI at the counter). Admin-only:
+// the server prices from the catalogue (with an optional amount override) and
+// stores the booking already confirmed, with no Razorpay order.
+poojaRouter.post(
+  "/bookings/manual",
+  apiRateLimiter,
+  authenticate,
+  requireValidSession,
+  validate(manualPoojaBookingSchema),
+  createManualPoojaBooking,
+);
+
+// Update a booking's status from the dashboard (confirm / complete / cancel).
+poojaRouter.patch(
+  "/bookings/:id/status",
+  apiRateLimiter,
+  authenticate,
+  requireValidSession,
+  validate(updatePoojaBookingStatusSchema),
+  updatePoojaBookingStatus,
 );
 
 // --- Booking (public checkout) ---
