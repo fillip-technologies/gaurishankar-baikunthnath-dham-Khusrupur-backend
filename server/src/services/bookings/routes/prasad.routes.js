@@ -7,11 +7,13 @@ import {
 import { upload } from "../../../middlewares/multer.middleware.js";
 import {
   addPrasadSchema,
+  updatePrasadSchema,
   bookPrasadSchema,
   verifyPrasadBookingSchema,
 } from "../../../validations/prasad.validator.js";
 import {
   addPrasad,
+  updatePrasad,
   getAllPrasad,
   removePrasad,
 } from "../controllers/prasad.controller.js";
@@ -33,6 +35,16 @@ prasadRouter.post(
   upload.single("file"),
   validate(addPrasadSchema),
   addPrasad,
+);
+
+prasadRouter.patch(
+  "/update/:id",
+  apiRateLimiter,
+  authenticate,
+  requireValidSession,
+  upload.single("file"),
+  validate(updatePrasadSchema),
+  updatePrasad,
 );
 
 prasadRouter.delete(

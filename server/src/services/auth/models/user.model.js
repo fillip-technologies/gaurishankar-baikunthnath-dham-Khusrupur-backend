@@ -89,10 +89,7 @@ adminSchema.pre("save", async function () {
   );
 });
 
-// Safety net: strip sensitive fields whenever a document is serialized to JSON
-// (e.g. res.json(doc)). Most of these are already `select: false`, but this
-// guarantees the password and secrets can never leak in an API response even if
-// an endpoint forgets to sanitize or explicitly selects them.
+
 const stripSensitiveFields = (doc, ret) => {
   delete ret.password;
   delete ret.refreshToken;

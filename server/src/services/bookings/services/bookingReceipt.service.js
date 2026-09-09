@@ -153,8 +153,22 @@ export const sendPrasadReceiptService = async (bookingId) => {
   if (!booking) return;
 
   try {
-    const { prasad, payment, quantity, amount, createdAt } = booking;
+    const { prasad, payment, quantity, amount, createdAt, deliveryAddress } =
+      booking;
     const payer = payment?.payer || {};
+
+    // Single-line delivery address for the invoice, skipping blank parts.
+    const shippingAddress = deliveryAddress
+      ? [
+          deliveryAddress.line1,
+          deliveryAddress.landmark,
+          deliveryAddress.city,
+          deliveryAddress.state,
+          deliveryAddress.pincode,
+        ]
+          .filter((part) => part && String(part).trim())
+          .join(", ")
+      : undefined;
 
     if (!payer.email) {
       logger.warn(
@@ -173,6 +187,7 @@ export const sendPrasadReceiptService = async (bookingId) => {
       to: payer.email,
       name: payer.name,
       phone: payer.phone,
+      address: shippingAddress,
       bookingId: String(booking._id),
       paymentId: payment?.razorpayPaymentId,
       bookingType: "Prasad",
@@ -294,7 +309,8 @@ export const sendRoomReceiptService = async (bookingId) => {
   if (!booking) return;
 
   try {
-    const { room, payment, quantity, amount, createdAt } = booking;
+    const { room, payment, quantity, amount, createdAt, checkIn, checkOut } =
+      booking;
     const payer = payment?.payer || {};
 
     if (!payer.email) {
@@ -309,6 +325,16 @@ export const sendRoomReceiptService = async (bookingId) => {
 
     const amountRupees = amount / 100;
     const bookingTime = formatIST(createdAt);
+
+    const stayDate = (d) =>
+      new Date(d).toLocaleDateString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        dateStyle: "medium",
+      });
+    const stayDetails = [];
+    if (checkIn) stayDetails.push({ label: "Check-in", value: stayDate(checkIn) });
+    if (checkOut)
+      stayDetails.push({ label: "Check-out", value: stayDate(checkOut) });
 
     await sendBookingReceiptService({
       to: payer.email,
@@ -325,6 +351,7 @@ export const sendRoomReceiptService = async (bookingId) => {
       unitLabel: "room(s)",
       amountRupees,
       bookingTime,
+      details: stayDetails,
     });
   } catch (error) {
     logger.error(

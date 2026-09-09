@@ -10,6 +10,7 @@ import {
   addRoomSchema,
   updateRoomSchema,
   bookRoomSchema,
+  roomAvailabilitySchema,
   verifyRoomBookingSchema,
 } from "../../../validations/room.validator.js";
 import {
@@ -20,6 +21,7 @@ import {
 } from "../controllers/room.controller.js";
 import {
   bookRoom,
+  getRoomsAvailability,
   getAllRoomBookings,
   verifyRoomBooking,
   checkInRoom,
@@ -59,6 +61,15 @@ roomRouter.delete(
 
 // --- Public ---
 roomRouter.get("/rooms", getAllRoom);
+
+// Per-date-range availability for the whole catalogue. Drives the public booking
+// page: ?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD.
+roomRouter.get(
+  "/availability",
+  apiRateLimiter,
+  validate(roomAvailabilitySchema),
+  getRoomsAvailability,
+);
 
 // --- Bookings (admin) ---
 // List all room bookings for the dashboard. Optional filters:

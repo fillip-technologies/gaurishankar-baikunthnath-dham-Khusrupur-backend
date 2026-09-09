@@ -12,7 +12,17 @@ const poojaSchema = new mongoose.Schema(
       type: String,
       trim: true,
       minlength: [3, "Description must be at least 3 character long"],
-      
+
+    },
+    // Which category this pooja is filed under. Intentionally NOT `required` at
+    // the schema level: poojas created before categories existed have none, and
+    // `.save()` runs full-document validation — a required field here would make
+    // those legacy docs uneditable. "Required" is enforced on the add route only
+    // (poojaSchema), so every NEW pooja must pick a category.
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PoojaCategory",
+      default: null,
     },
     imageUrl: {
       type: String,

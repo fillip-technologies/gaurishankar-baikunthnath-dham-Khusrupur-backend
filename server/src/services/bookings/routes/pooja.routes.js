@@ -20,6 +20,7 @@ import {
   removePooja,
   updatePooja,
 } from "../controllers/pooja.controller.js";
+import { getAllPoojaCategories } from "../controllers/poojaCategory.controller.js";
 import {
   bookPooja,
   createManualPoojaBooking,
@@ -58,6 +59,12 @@ poojaRouter.delete(
   requireValidSession,
   removePooja,
 );
+
+// --- Categories ---
+// Public read-only list (drives the catalogue filter + the add-pooja dropdown).
+// Categories have no create/delete endpoints: they are born when a pooja is
+// added under a new name, and die when their last pooja is removed.
+poojaRouter.get("/categories", getAllPoojaCategories);
 
 // --- Public ---
 poojaRouter.get("/poojas", getAllPooja);

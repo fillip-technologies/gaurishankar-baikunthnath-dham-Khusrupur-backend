@@ -38,6 +38,54 @@ export const addPrasadService = async ({
   return response;
 };
 
+export const updatePrasadService = async ({
+  id,
+  prasadName,
+  pricePerKg,
+  description,
+  file,
+}) => {
+  const prasad = await Prasad.findById(id);
+  if (!prasad) throw new ApiError(HTTP_STATUS.NOT_FOUND, "Prasad not found");
+
+  if (prasadName !== undefined && prasadName !== prasad.prasadName) {
+    const duplicate = await Prasad.findOne({
+      prasadName,
+      _id: { $ne: id },
+    }).lean();
+    if (duplicate)
+      throw new ApiError(HTTP_STATUS.CONFLICT, "Prasad already exists");
+  }
+
+  if (prasadName !== undefined) prasad.prasadName = prasadName;
+  if (pricePerKg !== undefined) prasad.pricePerKg = pricePerKg;
+  if (description !== undefined) prasad.description = description;
+
+  // Replace the image only after a successful upload, then clean up the old
+  // asset once the document is saved so a failed upload never orphans the record.
+  const oldPublicId = prasad.publicId;
+  let uploadedNewImage = false;
+  if (file?.buffer) {
+    const upload = await uploadToCloudinary(file.buffer);
+    if (!upload)
+      throw new ApiError(
+        HTTP_STATUS.UNSUPPORTED_MEDIA_TYPE,
+        "Something went wrong",
+      );
+    prasad.imageUrl = upload.secure_url;
+    prasad.publicId = upload.public_id;
+    uploadedNewImage = true;
+  }
+
+  const updated = await prasad.save();
+
+  if (uploadedNewImage && oldPublicId) {
+    await deleteFromCloudinary(oldPublicId);
+  }
+
+  return updated;
+};
+
 export const deletePrasadService = async ({ id }) => {
   const prasad = await Prasad.findById(id);
   if (!prasad) throw new ApiError(HTTP_STATUS.NOT_FOUND, "Prasad not found");

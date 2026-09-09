@@ -1,20 +1,39 @@
 import { z } from "zod";
 
+const objectId = (label) =>
+  z.string().trim().regex(/^[0-9a-fA-F]{24}$/, `Invalid ${label}`);
+
+const categoryName = z
+  .string()
+  .trim()
+  .min(2, "Category name must be at least 2 characters long")
+  .max(60, "Category name must not exceed 60 characters");
+
 export const poojaSchema = z.object({
-  body: z.object({
-    poojaName: z
-      .string()
-      .trim()
-      .min(3, "Pooja name must be atleast 3 characters long!")
-      .max(100, "Pooja name must not increse 100 chracters!"),
-    description: z
-      .string()
-      .trim()
-      .min(3, "Description must be atleast 3 characters long!")
-      .max(500, "Description must not increse 500 chracters!")
-      .optional(),
-    price: z.coerce.number().positive("Price must be greater than 0"),
-  }),
+  body: z
+    .object({
+      poojaName: z
+        .string()
+        .trim()
+        .min(3, "Pooja name must be atleast 3 characters long!")
+        .max(100, "Pooja name must not increse 100 chracters!"),
+      description: z
+        .string()
+        .trim()
+        .min(3, "Description must be atleast 3 characters long!")
+        .max(500, "Description must not increse 500 chracters!")
+        .optional(),
+      price: z.coerce.number().positive("Price must be greater than 0"),
+      // Every new pooja must be filed under a category: either an existing one
+      // by id, or a new one by name (created together with the pooja). Enforced
+      // here — not on the model — so pre-category poojas stay editable.
+      category: objectId("category").optional(),
+      categoryName: categoryName.optional(),
+    })
+    .refine((b) => Boolean(b.category) || Boolean(b.categoryName), {
+      message: "A category is required (pick one or add a new one)",
+      path: ["category"],
+    }),
 });
 
 export const updatePoojaSchema = z.object({
@@ -35,6 +54,10 @@ export const updatePoojaSchema = z.object({
       .number()
       .positive("Price must be greater than 0")
       .optional(),
+    // On update the category may be left untouched; if changed it can be an
+    // existing id or a new name.
+    category: objectId("category").optional(),
+    categoryName: categoryName.optional(),
   }),
 });
 

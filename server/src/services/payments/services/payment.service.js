@@ -110,6 +110,7 @@ export const createOrderService = async ({
       : undefined,
     razorpayOrderId: order.id,
     status: "created",
+    notes,
   });
 
   await writeAudit({

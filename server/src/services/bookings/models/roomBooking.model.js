@@ -18,6 +18,18 @@ const roomBookingSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
+    // Stay date range chosen at checkout. Availability is computed per-night over
+    // [checkIn, checkOut) — checkout is exclusive (the room frees on that morning).
+    // Optional at the schema level so the admin check-in/out flow can still create
+    // dateless bookings in tests/seeds; the public /book route requires both.
+    checkIn: {
+      type: Date,
+      default: null,
+    },
+    checkOut: {
+      type: Date,
+      default: null,
+    },
     amount: {
       type: Number,
       required: true,
@@ -52,5 +64,9 @@ const roomBookingSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+// Drives the date-range availability query: "confirmed bookings for this room
+// whose [checkIn, checkOut) overlaps the requested range".
+roomBookingSchema.index({ room: 1, status: 1, checkIn: 1, checkOut: 1 });
 
 export const RoomBooking = mongoose.model("RoomBooking", roomBookingSchema);

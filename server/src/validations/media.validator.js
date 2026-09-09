@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-export const galleryPostSchema = z.object({
+export const 
+galleryPostSchema = z.object({
   body: z.object({
     title: z
       .string()

@@ -16,6 +16,7 @@ import {
 import {
   createRoomBookingService,
   getAllRoomBookingsService,
+  getRoomsWithAvailabilityService,
   checkInRoomBookingService,
   checkOutRoomBookingService,
 } from "../services/roomBooking.service.js";
@@ -30,12 +31,13 @@ import { RoomBooking } from "../models/roomBooking.model.js";
 
 
 export const bookPrasad = asyncHandler(async (req, res) => {
-  const { prasadId, quantity, payer } = req.validated.body;
+  const { prasadId, quantity, payer, address } = req.validated.body;
 
   const result = await createPrasadBookingService({
     prasadId,
     quantity,
     payer,
+    address,
     ipAddress: req.ip,
     userAgent: req.get("user-agent"),
   });
@@ -128,10 +130,7 @@ export const bookPooja = asyncHandler(async (req, res) => {
     .json(new ApiResponse(HTTP_STATUS.CREATED, result, "Pooja booking created"));
 });
 
-// Step 2: called after Razorpay Checkout completes. Signature verification is
-// delegated to the payments module; we then confirm the booking here so the
-// response reflects the final status immediately (the webhook subscriber covers
-// the case where this call never happens).
+
 export const verifyPoojaBooking = asyncHandler(async (req, res) => {
   const { razorpayOrderId, razorpayPaymentId, razorpaySignature } =
     req.validated.body;
@@ -235,12 +234,14 @@ export const getAllPoojaBookings = asyncHandler(async (req, res) => {
 // Public checkout: the guest picks a room type + quantity; the server prices it
 // from the catalogue and returns a Razorpay order.
 export const bookRoom = asyncHandler(async (req, res) => {
-  const { roomId, quantity, payer } = req.validated.body;
+  const { roomId, quantity, payer, checkIn, checkOut } = req.validated.body;
 
   const result = await createRoomBookingService({
     roomId,
     quantity,
     payer,
+    checkIn,
+    checkOut,
     ipAddress: req.ip,
     userAgent: req.get("user-agent"),
   });
@@ -248,6 +249,25 @@ export const bookRoom = asyncHandler(async (req, res) => {
   return res
     .status(HTTP_STATUS.CREATED)
     .json(new ApiResponse(HTTP_STATUS.CREATED, result, "Room booking created"));
+});
+
+// Public: the room catalogue with per-date-range availability. The booking page
+// calls this with the guest's chosen check-in/check-out so every card shows how
+// many rooms are free for those exact nights.
+export const getRoomsAvailability = asyncHandler(async (req, res) => {
+  const { checkIn, checkOut } = req.validated.query;
+
+  const rooms = await getRoomsWithAvailabilityService({ checkIn, checkOut });
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiResponse(
+        HTTP_STATUS.OK,
+        rooms,
+        rooms.length ? "Room availability" : "No rooms listed",
+      ),
+    );
 });
 
 // Step 2: called after Razorpay Checkout completes. Signature verification is

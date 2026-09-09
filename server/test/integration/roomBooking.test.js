@@ -31,6 +31,10 @@ const PAYER = {
 const sign = (secret, payload) =>
   crypto.createHmac("sha256", secret).update(payload).digest("hex");
 
+// Far-future stay dates so the "check-in not in the past" rule always passes.
+const CHECK_IN = "2099-06-10";
+const CHECK_OUT = "2099-06-12"; // 2 nights
+
 let roomSeq = 0;
 const seedRoom = (overrides = {}) =>
   Room.create({
@@ -51,33 +55,42 @@ beforeEach(() => {
 });
 
 describe("POST /api/v1/rooms/book", () => {
-  it("prices the order on the server and creates a pending booking (201)", async () => {
+  it("prices the order by quantity × nights and creates a pending booking (201)", async () => {
     const room = await seedRoom();
     razorpay.orders.create.mockResolvedValue({
       id: "order_BOOK1",
-      amount: 300000,
+      amount: 600000,
       currency: "INR",
     });
 
     const res = await request(app)
       .post("/api/v1/rooms/book")
-      .send({ roomId: room._id.toString(), quantity: 2, payer: PAYER });
+      .send({
+        roomId: room._id.toString(),
+        quantity: 2,
+        checkIn: CHECK_IN,
+        checkOut: CHECK_OUT,
+        payer: PAYER,
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.data.orderId).toBe("order_BOOK1");
     expect(res.body.data.bookingId).toBeDefined();
     expect(res.body.data.roomType).toBe(room.roomType);
+    expect(res.body.data.nights).toBe(2);
 
-    // ₹1500 * 2 = ₹3000 = 300000 paise — computed by the server, not the client.
+    // ₹1500 × 2 rooms × 2 nights = ₹6000 = 600000 paise — priced by the server.
     expect(razorpay.orders.create).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 300000 }),
+      expect.objectContaining({ amount: 600000 }),
     );
 
     const booking = await RoomBooking.findById(res.body.data.bookingId);
     expect(booking.status).toBe("pending");
     expect(booking.stayStatus).toBe("booked");
-    expect(booking.amount).toBe(300000);
+    expect(booking.amount).toBe(600000);
     expect(booking.quantity).toBe(2);
+    expect(booking.checkIn).toEqual(new Date(`${CHECK_IN}T00:00:00.000Z`));
+    expect(booking.checkOut).toEqual(new Date(`${CHECK_OUT}T00:00:00.000Z`));
     expect(booking.payment).not.toBeNull();
 
     const payment = await Payment.findById(booking.payment);
@@ -91,30 +104,51 @@ describe("POST /api/v1/rooms/book", () => {
     const room = await seedRoom();
     razorpay.orders.create.mockResolvedValue({
       id: "order_DEFAULT",
-      amount: 150000,
+      amount: 300000,
       currency: "INR",
     });
 
     const res = await request(app)
       .post("/api/v1/rooms/book")
-      .send({ roomId: room._id.toString(), payer: PAYER });
+      .send({
+        roomId: room._id.toString(),
+        checkIn: CHECK_IN,
+        checkOut: CHECK_OUT,
+        payer: PAYER,
+      });
 
     expect(res.status).toBe(201);
+    // 1 room × 2 nights × ₹1500 = 300000 paise.
     expect(razorpay.orders.create).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 150000 }),
+      expect.objectContaining({ amount: 300000 }),
     );
     const booking = await RoomBooking.findById(res.body.data.bookingId);
     expect(booking.quantity).toBe(1);
   });
 
-  it("rejects booking more rooms than are available (409)", async () => {
-    const room = await seedRoom({ totalRooms: 2, availableRooms: 1 });
-
+  it("returns 400 when the stay dates are missing", async () => {
+    const room = await seedRoom();
     const res = await request(app)
       .post("/api/v1/rooms/book")
-      .send({ roomId: room._id.toString(), quantity: 2, payer: PAYER });
+      .send({ roomId: room._id.toString(), quantity: 1, payer: PAYER });
 
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(400);
+    expect(razorpay.orders.create).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when check-out is not after check-in", async () => {
+    const room = await seedRoom();
+    const res = await request(app)
+      .post("/api/v1/rooms/book")
+      .send({
+        roomId: room._id.toString(),
+        quantity: 1,
+        checkIn: CHECK_IN,
+        checkOut: CHECK_IN,
+        payer: PAYER,
+      });
+
+    expect(res.status).toBe(400);
     expect(razorpay.orders.create).not.toHaveBeenCalled();
   });
 
@@ -122,6 +156,8 @@ describe("POST /api/v1/rooms/book", () => {
     const res = await request(app).post("/api/v1/rooms/book").send({
       roomId: "64b7f0000000000000000000",
       quantity: 1,
+      checkIn: CHECK_IN,
+      checkOut: CHECK_OUT,
       payer: PAYER,
     });
 
@@ -131,9 +167,12 @@ describe("POST /api/v1/rooms/book", () => {
 
   it("returns 400 when payer details are missing", async () => {
     const room = await seedRoom();
-    const res = await request(app)
-      .post("/api/v1/rooms/book")
-      .send({ roomId: room._id.toString(), quantity: 1 });
+    const res = await request(app).post("/api/v1/rooms/book").send({
+      roomId: room._id.toString(),
+      quantity: 1,
+      checkIn: CHECK_IN,
+      checkOut: CHECK_OUT,
+    });
 
     expect(res.status).toBe(400);
     expect(razorpay.orders.create).not.toHaveBeenCalled();
@@ -143,14 +182,20 @@ describe("POST /api/v1/rooms/book", () => {
     const room = await seedRoom();
     razorpay.orders.create.mockResolvedValue({
       id: "order_PUBLIC",
-      amount: 150000,
+      amount: 300000,
       currency: "INR",
     });
 
     // No cookie set at all.
     const res = await request(app)
       .post("/api/v1/rooms/book")
-      .send({ roomId: room._id.toString(), quantity: 1, payer: PAYER });
+      .send({
+        roomId: room._id.toString(),
+        quantity: 1,
+        checkIn: CHECK_IN,
+        checkOut: CHECK_OUT,
+        payer: PAYER,
+      });
 
     expect(res.status).toBe(201);
   });
@@ -161,12 +206,18 @@ describe("POST /api/v1/rooms/verify", () => {
     const room = await seedRoom();
     razorpay.orders.create.mockResolvedValue({
       id: "order_VERIFY",
-      amount: 300000,
+      amount: 600000,
       currency: "INR",
     });
     const res = await request(app)
       .post("/api/v1/rooms/book")
-      .send({ roomId: room._id.toString(), quantity: 2, payer: PAYER });
+      .send({
+        roomId: room._id.toString(),
+        quantity: 2,
+        checkIn: CHECK_IN,
+        checkOut: CHECK_OUT,
+        payer: PAYER,
+      });
     return res.body.data;
   };
 
@@ -248,6 +299,112 @@ describe("POST /api/v1/rooms/verify", () => {
       },
       { timeout: 3000 },
     );
+  });
+});
+
+describe("GET /api/v1/rooms/availability (date-range)", () => {
+  const AVAIL_URL = "/api/v1/rooms/availability";
+
+  // A confirmed booking occupying `quantity` rooms for [checkIn, checkOut).
+  const confirmedBooking = (room, checkIn, checkOut, quantity = 1) =>
+    RoomBooking.create({
+      room: room._id,
+      quantity,
+      amount: room.price * quantity * 100,
+      status: "confirmed",
+      checkIn: new Date(`${checkIn}T00:00:00.000Z`),
+      checkOut: new Date(`${checkOut}T00:00:00.000Z`),
+    });
+
+  const availabilityFor = async (roomId, checkIn, checkOut) => {
+    const res = await request(app).get(
+      `${AVAIL_URL}?checkIn=${checkIn}&checkOut=${checkOut}`,
+    );
+    const row = res.body.data.find((r) => r._id === roomId.toString());
+    return { status: res.status, available: row?.available, nights: row?.nights };
+  };
+
+  it("reports full inventory when there are no bookings", async () => {
+    const room = await seedRoom({ totalRooms: 5, availableRooms: 5 });
+    const { status, available, nights } = await availabilityFor(
+      room._id,
+      "2099-06-10",
+      "2099-06-12",
+    );
+    expect(status).toBe(200);
+    expect(available).toBe(5);
+    expect(nights).toBe(2);
+  });
+
+  it("checkout is exclusive: a 10→12 booking frees the room on the 12th", async () => {
+    const room = await seedRoom({ totalRooms: 1, availableRooms: 1 });
+    await confirmedBooking(room, "2099-06-10", "2099-06-12", 1);
+
+    // Same nights → fully booked.
+    expect((await availabilityFor(room._id, "2099-06-10", "2099-06-12")).available).toBe(0);
+    // Starting on the checkout day → free again.
+    expect((await availabilityFor(room._id, "2099-06-12", "2099-06-14")).available).toBe(1);
+  });
+
+  it("uses peak-per-night, not blanket overlap", async () => {
+    const room = await seedRoom({ totalRooms: 1, availableRooms: 1 });
+    // Occupied 10→14 (nights 10,11,12,13).
+    await confirmedBooking(room, "2099-06-10", "2099-06-14", 1);
+
+    // Query 13→15: night 13 is occupied → 0 free for the range.
+    expect((await availabilityFor(room._id, "2099-06-13", "2099-06-15")).available).toBe(0);
+    // Query 14→15: night 14 is free → 1 free.
+    expect((await availabilityFor(room._id, "2099-06-14", "2099-06-15")).available).toBe(1);
+  });
+
+  it("ignores pending bookings — only confirmed ones occupy", async () => {
+    const room = await seedRoom({ totalRooms: 2, availableRooms: 2 });
+    await RoomBooking.create({
+      room: room._id,
+      quantity: 2,
+      amount: room.price * 2 * 100,
+      status: "pending",
+      checkIn: new Date("2099-06-10T00:00:00.000Z"),
+      checkOut: new Date("2099-06-12T00:00:00.000Z"),
+    });
+
+    expect((await availabilityFor(room._id, "2099-06-10", "2099-06-12")).available).toBe(2);
+  });
+
+  it("blocks booking a room that is full for the requested range (409)", async () => {
+    const room = await seedRoom({ totalRooms: 1, availableRooms: 1 });
+    await confirmedBooking(room, "2099-06-10", "2099-06-12", 1);
+
+    const res = await request(app).post("/api/v1/rooms/book").send({
+      roomId: room._id.toString(),
+      quantity: 1,
+      checkIn: "2099-06-10",
+      checkOut: "2099-06-12",
+      payer: PAYER,
+    });
+
+    expect(res.status).toBe(409);
+    expect(razorpay.orders.create).not.toHaveBeenCalled();
+  });
+
+  it("allows booking the same room for a non-overlapping range", async () => {
+    const room = await seedRoom({ totalRooms: 1, availableRooms: 1 });
+    await confirmedBooking(room, "2099-06-10", "2099-06-12", 1);
+    razorpay.orders.create.mockResolvedValue({
+      id: "order_NONOVERLAP",
+      amount: 150000,
+      currency: "INR",
+    });
+
+    const res = await request(app).post("/api/v1/rooms/book").send({
+      roomId: room._id.toString(),
+      quantity: 1,
+      checkIn: "2099-06-12",
+      checkOut: "2099-06-13",
+      payer: PAYER,
+    });
+
+    expect(res.status).toBe(201);
   });
 });
 

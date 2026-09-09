@@ -14,6 +14,7 @@ export const createPrasadBookingService = async ({
   prasadId,
   quantity,
   payer,
+  address,
   ipAddress,
   userAgent,
 }) => {
@@ -26,12 +27,13 @@ export const createPrasadBookingService = async ({
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Order amount is too small");
   }
 
-  // 1. Record the booking in a not-yet-paid state.
+  // 1. Record the booking in a not-yet-paid state, with the delivery address.
   const booking = await PrasadBooking.create({
     prasad: prasad._id,
     quantity,
     amount,
     status: "pending",
+    deliveryAddress: address,
   });
 
   // 2. Ask the payments module for an order tied back to this booking.

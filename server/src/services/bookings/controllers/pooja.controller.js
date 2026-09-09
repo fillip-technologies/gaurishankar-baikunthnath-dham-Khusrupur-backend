@@ -10,12 +10,15 @@ import {
 } from "../services/pooja.service.js";
 
 export const addPooja = asyncHandler(async (req, res) => {
-  const { poojaName, description, price } = req.validated.body;
+  const { poojaName, description, price, category, categoryName } =
+    req.validated.body;
   const file = req.file;
   const response = await addPoojaService({
     poojaName,
     description,
     price,
+    category,
+    categoryName,
     file,
   });
   return res
@@ -40,13 +43,16 @@ export const updatePooja = asyncHandler(async (req, res) => {
   const id = req.params?.id;
   if (!id) throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Id is required field");
 
-  const { poojaName, description, price } = req.validated.body;
+  const { poojaName, description, price, category, categoryName } =
+    req.validated.body;
   const file = req.file;
 
   if (
     poojaName === undefined &&
     description === undefined &&
     price === undefined &&
+    category === undefined &&
+    categoryName === undefined &&
     !file
   )
     throw new ApiError(
@@ -59,6 +65,8 @@ export const updatePooja = asyncHandler(async (req, res) => {
     poojaName,
     description,
     price,
+    category,
+    categoryName,
     file,
   });
 
@@ -68,7 +76,7 @@ export const updatePooja = asyncHandler(async (req, res) => {
 });
 
 export const getAllPooja = asyncHandler(async (req, res) => {
-  const poojas = await Pooja.find().lean();
+  const poojas = await Pooja.find().populate("category", "name").lean();
 
   return res
     .status(HTTP_STATUS.OK)
