@@ -10,6 +10,7 @@ import shringarSchema, {
 } from "../../../validations/shringar.validator.js";
 import {
   addShringar,
+  activateShringar,
   deleteShringar,
   getAllShringar,
   getLatestShringar,
@@ -38,6 +39,14 @@ shringarRouter.put(
   upload.single("file"),
   validate(shringarUpdateSchema),
   updateShringar,
+);
+
+shringarRouter.patch(
+  "/activate/:id",
+  apiRateLimiter,
+  authenticate,
+  requireValidSession,
+  activateShringar,
 );
 
 shringarRouter.delete(
