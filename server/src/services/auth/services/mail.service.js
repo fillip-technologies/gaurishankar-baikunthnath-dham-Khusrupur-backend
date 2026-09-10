@@ -7,6 +7,7 @@ import { otpTemplate } from "../../../templates/otp.template.js";
 import { crendentialsTemplate } from "../../../templates/adminCredentialsTemplate.js";
 import ApiError from "../../../utils/ApiError.js";
 import { generateOTP } from "../../../utils/generateOTP.js";
+import logger from "../../../utils/logger.js";
 
 const sendMail = async ({ name, email, otp }) => {
   await transporter.sendMail({
@@ -37,9 +38,18 @@ export const generateAndSendOtp = async (admin) => {
       otp,
     });
   } catch (error) {
+    // In development, SMTP failures must not block login — log the OTP to the
+    // console so the developer can still complete the flow without working SMTP.
+    if (process.env.NODE_ENV === "development") {
+      logger.warn(
+        { email: admin.email },
+        `[DEV] SMTP unavailable — OTP for ${admin.email}: ${otp}`,
+      );
+      return true;
+    }
+
     admin.loginOtp = undefined;
     admin.otpExpiry = undefined;
-
     await admin.save({ validateBeforeSave: false });
 
     throw new ApiError(

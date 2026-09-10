@@ -19,6 +19,7 @@ import ApiResponse from "../../../utils/ApiResponse.js";
 import { updatePasswordService } from "../services/auth.service.js";
 import { Admin } from "../models/user.model.js";
 import { envConfig } from "../../../configs/env.config.js";
+import jwt from "jsonwebtoken";
 
 const getDeviceInfo = (req) => ({
   deviceId: req.cookies?.deviceId,
@@ -229,6 +230,35 @@ export const getAdmin = asyncHandler(async (req, res) => {
   res
     .status(HTTP_STATUS.OK)
     .json(new ApiResponse(HTTP_STATUS.OK, admin, "Admin fetched succesfullly"));
+});
+
+export const resendOtp = asyncHandler(async (req, res) => {
+  const challengeToken = req.cookies?.loginChallenge;
+  if (!challengeToken)
+    throw new ApiError(
+      HTTP_STATUS.UNAUTHORIZED,
+      "Login session expired. Please login again.",
+    );
+
+  let decoded;
+  try {
+    decoded = jwt.verify(challengeToken, envConfig.CHALLENGE_TOKEN_SECRET);
+  } catch {
+    throw new ApiError(
+      HTTP_STATUS.UNAUTHORIZED,
+      "Login session expired. Please login again.",
+    );
+  }
+
+  const user = await Admin.findById(decoded._id);
+  if (!user) throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Not authorized");
+
+  const { generateAndSendOtp } = await import("../services/mail.service.js");
+  await generateAndSendOtp(user);
+
+  return res
+    .status(HTTP_STATUS.OK)
+    .json(new ApiResponse(HTTP_STATUS.OK, null, "OTP resent to your email."));
 });
 
 export const logOut = asyncHandler(async (req, res) => {

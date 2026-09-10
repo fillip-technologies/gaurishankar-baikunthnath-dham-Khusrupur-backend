@@ -11,6 +11,7 @@ import {
   renewRefreshToken,
   updatePassword,
   verifyLoginOtp,
+  resendOtp,
 } from "../controllers/auth.controller.js";
 
 import {
@@ -42,6 +43,8 @@ authRouter.post(
   validate(otpSchema),
   verifyLoginOtp,
 );
+
+authRouter.post("/resend-otp", otpLimiter, resendOtp);
 
 authRouter.post(
   "/create_admin",
