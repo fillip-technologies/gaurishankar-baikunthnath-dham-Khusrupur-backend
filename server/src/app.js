@@ -19,6 +19,7 @@ import eventRouter from "./services/media/routes/event.routes.js";
 import "./services/bookings/subscribers/prasadBooking.subscriber.js";
 import "./services/bookings/subscribers/poojaBooking.subscriber.js";
 import "./services/bookings/subscribers/roomBooking.subscriber.js";
+import "./services/payments/subscribers/donation.subscriber.js";
 import  poojaRouter  from "./services/bookings/routes/pooja.routes.js";
 import roomRouter from "./services/bookings/routes/room.routes.js";
 
